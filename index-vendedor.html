@@ -65,25 +65,41 @@
   );
   const vendedor_id = '46867ced-d0c6-4311-b8da-24756366aaa2';
 
-  document.addEventListener('DOMContentLoaded', function () {
+  document.addEventListener('DOMContentLoaded', () => {
+    console.log('🧪 Script cargado correctamente');
+
     // Login
-    document.getElementById('loginForm').addEventListener('submit', function(e) {
+    const loginForm = document.getElementById('loginForm');
+    if (!loginForm) {
+      console.error('❌ No se encontró el formulario con id="loginForm"');
+      return;
+    }
+
+    loginForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      const correo = e.target.correo.value;
-      const clave = e.target.clave.value;
+      const correo = e.target.correo.value.trim().toLowerCase();
+      const clave = e.target.clave.value.trim();
 
       if (correo === 'vendedor@wioo.app' && clave === '123456') {
+        console.log('✅ Login exitoso');
         document.getElementById('loginFeedback').innerText = '';
         document.getElementById('menuPrincipal').classList.remove('hidden');
         document.getElementById('enrolamiento').classList.remove('hidden'); 
-        e.target.parentElement.classList.add('hidden');
+        loginForm.parentElement.classList.add('hidden');
       } else {
+        console.warn('⚠️ Credenciales incorrectas');
         document.getElementById('loginFeedback').innerText = 'Credenciales inválidas';
       }
     });
 
     // Enrolamiento
-    document.querySelector('#formEnrolar').addEventListener('submit', async (e) => {
+    const formEnrolar = document.getElementById('formEnrolar');
+    if (!formEnrolar) {
+      console.error('❌ No se encontró el formulario con id="formEnrolar"');
+      return;
+    }
+
+    formEnrolar.addEventListener('submit', async (e) => {
       e.preventDefault();
       const form = e.target;
       const { imei, marca, modelo, cliente_nombre, cliente_cedula, cliente_telefono } = form;
@@ -100,10 +116,12 @@
 
       const feedback = document.getElementById('feedbackEnrolamiento');
       if (error) {
+        console.error('❌ Error en RPC:', error.message);
         feedback.innerText = `❌ Error: ${error.message}`;
         feedback.classList.remove('text-green-600');
         feedback.classList.add('text-red-600');
       } else {
+        console.log('✅ Dispositivo enrolado:', data);
         feedback.innerText = `✅ Dispositivo enrolado: ${data.imei}`;
         feedback.classList.remove('text-red-600');
         feedback.classList.add('text-green-600');
@@ -111,7 +129,7 @@
       }
     });
   });
-      </script>
+</script>
 
 </body>
 </html>
