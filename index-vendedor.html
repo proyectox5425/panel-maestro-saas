@@ -10,7 +10,7 @@
 
   <!-- Encabezado institucional -->
   <header class="bg-indigo-600 text-white p-4 shadow-md">
-    <h1 class="text-xl font-bold">WIOO – Panel Vendedor</h1>
+    <h1 class="text-xl font-bold">SAAS – Panel Vendedor</h1>
     <p class="text-sm">Enrolamiento de dispositivos vendidos a crédito</p>
   </header>
 
@@ -81,12 +81,11 @@
       const clave = e.target.clave.value.trim();
 
       if (correo === 'vendedor@wioo.app' && clave === '123456') {
-        console.log('✅ Login exitoso');
-        document.getElementById('loginFeedback').innerText = '';
-        document.getElementById('menuPrincipal').classList.remove('hidden');
-        document.getElementById('enrolamiento').classList.remove('hidden'); 
-        loginForm.parentElement.classList.add('hidden');
-      } else {
+  console.log('✅ Login exitoso');
+  document.getElementById('loginFeedback').innerText = '';
+  document.getElementById('menuPrincipal').classList.remove('hidden');
+  loginForm.parentElement.classList.add('hidden');
+    } else {
         console.warn('⚠️ Credenciales incorrectas');
         document.getElementById('loginFeedback').innerText = 'Credenciales inválidas';
       }
