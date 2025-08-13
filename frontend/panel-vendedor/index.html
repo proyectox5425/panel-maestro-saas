@@ -5,7 +5,7 @@
   <title>Panel Vendedor – WIOO</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script> <!-- 👈 Librería Supabase -->
 </head>
 <body class="bg-gray-100 font-sans">
 
@@ -30,7 +30,7 @@
   <section id="menuPrincipal" class="max-w-md mx-auto mt-10 hidden">
     <div class="bg-white p-6 rounded-lg shadow-lg space-y-4">
       <h2 class="text-lg font-semibold">Menú principal</h2>
-      <button class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">
+      <button onclick="document.getElementById('enrolamiento').classList.remove('hidden')" class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">
   Enrolar dispositivo
       </button>
       <button class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Ver historial de ventas</button>
