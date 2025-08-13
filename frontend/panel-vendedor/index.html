@@ -38,10 +38,11 @@
     </div>
   </section>
 
-  <!-- Enrolamiento de dispositivo -->
-<section id="enrolamiento" class="max-w-md mx-auto mt-6 hidden">
-  <div class="bg-white p-6 rounded-lg shadow-lg space-y-4">
-    <h2 class="text-lg font-semibold">Enrolar dispositivo</h2>
+  <!-- Modal de enrolamiento -->
+<div id="enrolamiento" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+  <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md relative">
+    <button onclick="document.getElementById('enrolamiento').classList.add('hidden')" class="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl font-bold">&times;</button>
+    <h2 class="text-lg font-semibold mb-4">Enrolar dispositivo</h2>
     <form id="formEnrolar" class="space-y-3">
       <input type="text" name="imei" placeholder="IMEI del dispositivo" class="w-full p-2 border rounded" required>
       <input type="text" name="marca" placeholder="Marca" class="w-full p-2 border rounded" required>
@@ -53,7 +54,7 @@
     </form>
     <div id="feedbackEnrolamiento" class="text-sm mt-2"></div>
   </div>
-</section>
+</div>
 
   <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
