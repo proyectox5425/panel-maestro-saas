@@ -66,6 +66,7 @@
   const vendedor_id = '46867ced-d0c6-4311-b8da-24756366aaa2';
 
   document.addEventListener('DOMContentLoaded', function () {
+    // Login
     document.getElementById('loginForm').addEventListener('submit', function(e) {
       e.preventDefault();
       const correo = e.target.correo.value;
@@ -81,33 +82,36 @@
       }
     });
 
+    // Enrolamiento
     document.querySelector('#formEnrolar').addEventListener('submit', async (e) => {
       e.preventDefault();
       const form = e.target;
-      const { imei, marca, modelo, clientenombre, clientecedula, cliente_telefono } = form;
+      const { imei, marca, modelo, cliente_nombre, cliente_cedula, cliente_telefono } = form;
 
       const { data, error } = await supabase.rpc('enrolar_dispositivo', {
         imei_input: imei.value,
         marca_input: marca.value,
         modelo_input: modelo.value,
-        clientenombreinput: cliente_nombre.value,
-        clientecedulainput: cliente_cedula.value,
-        clientetelefonoinput: cliente_telefono.value,
-        vendedoridinput: vendedor_id
+        cliente_nombre_input: cliente_nombre.value,
+        cliente_cedula_input: cliente_cedula.value,
+        cliente_telefono_input: cliente_telefono.value,
+        vendedor_id_input: vendedor_id
       });
 
       const feedback = document.getElementById('feedbackEnrolamiento');
       if (error) {
-        feedback.innerText = ❌ Error: ${error.message};
+        feedback.innerText = `❌ Error: ${error.message}`;
+        feedback.classList.remove('text-green-600');
         feedback.classList.add('text-red-600');
       } else {
-        feedback.innerText = ✅ Dispositivo enrolado: ${data.imei};
+        feedback.innerText = `✅ Dispositivo enrolado: ${data.imei}`;
+        feedback.classList.remove('text-red-600');
         feedback.classList.add('text-green-600');
         form.reset();
       }
     });
   });
-</script>
+      </script>
 
 </body>
 </html>
