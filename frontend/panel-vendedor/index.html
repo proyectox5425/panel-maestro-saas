@@ -96,6 +96,17 @@
         vendedor_id_input: vendedor_id
       });
 
+      document.querySelector('button:nth-child(2)').addEventListener('click', () => {
+  alert('📦 Historial de ventas no implementado aún.');
+});
+
+document.querySelector('button:nth-child(3)').addEventListener('click', () => {
+  document.getElementById('menuPrincipal').classList.add('hidden');
+  document.getElementById('loginForm').parentElement.classList.remove('hidden');
+  document.getElementById('enrolamiento').classList.add('hidden');
+  alert('👋 Sesión cerrada.');
+});
+
       const feedback = document.getElementById('feedbackEnrolamiento');
       if (error) {
         feedback.innerText = `❌ Error: ${error.message}`;
