@@ -35,6 +35,23 @@
     </div>
   </section>
 
+  <!-- Enrolamiento de dispositivo -->
+<section id="enrolamiento" class="max-w-md mx-auto mt-6 hidden">
+  <div class="bg-white p-6 rounded-lg shadow-lg space-y-4">
+    <h2 class="text-lg font-semibold">Enrolar dispositivo</h2>
+    <form id="formEnrolar" class="space-y-3">
+      <input type="text" name="imei" placeholder="IMEI del dispositivo" class="w-full p-2 border rounded" required>
+      <input type="text" name="marca" placeholder="Marca" class="w-full p-2 border rounded" required>
+      <input type="text" name="modelo" placeholder="Modelo" class="w-full p-2 border rounded" required>
+      <input type="text" name="cliente_nombre" placeholder="Nombre del cliente" class="w-full p-2 border rounded" required>
+      <input type="text" name="cliente_cedula" placeholder="Cédula" class="w-full p-2 border rounded" required>
+      <input type="text" name="cliente_telefono" placeholder="Teléfono" class="w-full p-2 border rounded" required>
+      <button type="submit" class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">Enrolar</button>
+    </form>
+    <div id="feedbackEnrolamiento" class="text-sm mt-2"></div>
+  </div>
+</section>
+
   <script>
     document.getElementById('loginForm').addEventListener('submit', function(e) {
       e.preventDefault();
@@ -50,6 +67,38 @@
         document.getElementById('loginFeedback').innerText = 'Credenciales inválidas';
       }
     });
+
+    const supabase = supabase.createClient(
+  'https://xhqhtzrcohovylcxibkf.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhocWh0enJjb2hvdnlsY3hpYmtmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4Njg3NTEsImV4cCI6MjA3MDQ0NDc1MX0.aTAOD-m3n2n6MAg1Cx2lDOPAD4jT2z4bcQXjxZwgllI'
+);
+const vendedor_id = '46867ced-d0c6-4311-b8da-24756366aaa2';
+
+document.querySelector('#formEnrolar').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const { imei, marca, modelo, cliente_nombre, cliente_cedula, cliente_telefono } = form;
+
+  const { data, error } = await supabase.rpc('enrolar_dispositivo', {
+    imei_input: imei.value,
+    marca_input: marca.value,
+    modelo_input: modelo.value,
+    cliente_nombre_input: cliente_nombre.value,
+    cliente_cedula_input: cliente_cedula.value,
+    cliente_telefono_input: cliente_telefono.value,
+    vendedor_id_input: vendedor_id
+  });
+
+  const feedback = document.getElementById('feedbackEnrolamiento');
+  if (error) {
+    feedback.innerText = `❌ Error: ${error.message}`;
+    feedback.classList.add('text-red-600');
+  } else {
+    feedback.innerText = `✅ Dispositivo enrolado: ${data.imei}`;
+    feedback.classList.add('text-green-600');
+    form.reset();
+  }
+});
   </script>
 
 </body>
