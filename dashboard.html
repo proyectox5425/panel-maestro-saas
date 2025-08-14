@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel Maestro</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+  <!-- Encabezado institucional -->
+  <header class="bg-white shadow p-4 flex justify-between items-center">
+    <h1 class="text-xl font-bold">Panel Maestro</h1>
+    <button onclick="cerrarSesion()" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Cerrar sesión</button>
+  </header>
+
+  <!-- Navegación principal -->
+  <main class="p-6 space-y-6">
+    <section>
+      <h2 class="text-lg font-semibold mb-2">Gestión institucional</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <a href="comercios.html" class="block bg-white p-4 rounded shadow hover:bg-blue-50">
+          <h3 class="font-bold text-blue-600">🧾 Comercios</h3>
+          <p>Alta, edición y auditoría de comercios registrados.</p>
+        </a>
+        <a href="licencias.html" class="block bg-white p-4 rounded shadow hover:bg-blue-50">
+          <h3 class="font-bold text-blue-600">🎫 Licencias</h3>
+          <p>Gestión de licencias activas y vencidas.</p>
+        </a>
+        <a href="auditoria.html" class="block bg-white p-4 rounded shadow hover:bg-blue-50">
+          <h3 class="font-bold text-blue-600">📊 Auditoría</h3>
+          <p>Visualización de trazabilidad y eventos operativos.</p>
+        </a>
+        <a href="panel_vendedor.html" class="block bg-white p-4 rounded shadow hover:bg-blue-50">
+          <h3 class="font-bold text-blue-600">🛒 Panel Vendedor</h3>
+          <p>Acceso directo al panel de ventas y validación de créditos.</p>
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <!-- Script de cierre de sesión -->
+  <script>
+    function cerrarSesion() {
+      localStorage.removeItem("token");
+      window.location.href = "index.html";
+    }
+  </script>
+
+</body>
+    </html>
