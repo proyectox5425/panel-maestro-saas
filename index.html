@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel Maestro – Login</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script src="auth.js" defer></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+  <div class="bg-white p-6 rounded shadow-md w-full max-w-sm">
+    <h2 class="text-xl font-bold mb-4 text-center">Acceso Institucional</h2>
+    <input id="correo" type="email" placeholder="Correo institucional" class="w-full mb-3 p-2 border rounded" />
+    <input id="clave" type="password" placeholder="Clave" class="w-full mb-3 p-2 border rounded" />
+    <button onclick="login()" class="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700">Entrar</button>
+    <p id="feedback" class="mt-3 text-sm text-red-600 text-center"></p>
+  </div>
+</body>
+      </html>
