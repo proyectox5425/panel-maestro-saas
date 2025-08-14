@@ -194,6 +194,25 @@
   </table>
 </section>
 
+  <!-- 💳 Bloque: Control financiero -->
+<section id="control-financiero" class="modulo">
+  <h2>Control Financiero</h2>
+  <form id="formFinanciero">
+    <label for="imeiFinanciero">IMEI del dispositivo:</label>
+    <input type="text" id="imeiFinanciero" required maxlength="20" />
+
+    <label for="accionFinanciera">Acción:</label>
+    <select id="accionFinanciera" required>
+      <option value="bloquear">Simular mora (bloquear)</option>
+      <option value="desbloquear">Registrar pago (desbloquear)</option>
+    </select>
+
+    <button type="submit">Ejecutar acción</button>
+  </form>
+
+  <div id="feedbackFinanciero" class="feedback"></div>
+</section>
+
   <!-- 🔌 Script funcional -->
   <script>
     const supabase = supabase.createClient(
@@ -338,6 +357,37 @@
 
 // Ejecutar al cargar la página
 cargarInstalados();
+
+    document.getElementById('formFinanciero').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const imei = document.getElementById('imeiFinanciero').value.trim();
+  const accion = document.getElementById('accionFinanciera').value;
+  const feedback = document.getElementById('feedbackFinanciero');
+
+  let nuevoEstado = accion === 'bloquear' ? 'bloqueado' : 'activa';
+
+  const { error } = await supabase
+    .from('licencias')
+    .update({ estado: nuevoEstado })
+    .eq('imei', imei);
+
+  if (error) {
+    feedback.textContent = '❌ Error: ' + error.message;
+    feedback.style.color = 'red';
+  } else {
+    await supabase.from('eventos_dispositivo').insert({
+      imei,
+      tipo_evento: accion,
+      fecha: new Date().toISOString()
+    });
+
+    feedback.textContent = `✅ Dispositivo ${accion === 'bloquear' ? 'bloqueado' : 'desbloqueado'} correctamente`;
+    feedback.style.color = 'green';
+    e.target.reset();
+    cargarLicencias();
+    cargarInstalados();
+  }
+});
   </script>
 </body>
   </html>
