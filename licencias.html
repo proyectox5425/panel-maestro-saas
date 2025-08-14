@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gestión de Licencias</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    .modulo { margin-bottom: 40px; }
+    label, input, select, button { display: block; margin: 10px 0; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    .feedback { margin-top: 10px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>Panel de Licencias</h1>
+
+  <!-- 🔧 Bloque 1: Generar licencia individual -->
+  <section id="crear-licencia-individual" class="modulo">
+    <h2>Generar Licencia Individual</h2>
+    <form id="formLicenciaIndividual">
+      <label for="tipo">Tipo de licencia:</label>
+      <select id="tipo" required>
+        <option value="bloqueo_total">Bloqueo total</option>
+        <option value="navegacion_limitada">Navegación limitada</option>
+      </select>
+
+      <label for="imei">IMEI del dispositivo:</label>
+      <input type="text" id="imei" required maxlength="20" />
+
+      <label for="comercio">Comercio asignado:</label>
+      <input type="text" id="comercio" required />
+
+      <button type="submit">Crear licencia</button>
+    </form>
+
+    <div id="feedbackLicenciaIndividual" class="feedback"></div>
+  </section>
+
+  <!-- 📦 Bloque 2: Generar lote de licencias -->
+  <section id="crear-lote-licencias" class="modulo">
+    <h2>Generar Lote de Licencias</h2>
+    <form id="formLoteLicencias">
+      <label for="cantidad">Cantidad:</label>
+      <input type="number" id="cantidad" required min="1" max="1000" />
+
+      <label for="tipoLote">Tipo de licencia:</label>
+      <select id="tipoLote" required>
+        <option value="bloqueo_total">Bloqueo total</option>
+        <option value="navegacion_limitada">Navegación limitada</option>
+      </select>
+
+      <label for="comercioLote">Comercio asignado:</label>
+      <input type="text" id="comercioLote" required />
+
+      <button type="submit">Crear lote</button>
+    </form>
+
+    <div id="feedbackLoteLicencias" class="feedback"></div>
+  </section>
+
+  <!-- 📊 Bloque 3: Tabla de licencias -->
+  <section id="tabla-licencias" class="modulo">
+    <h2>Licencias Existentes</h2>
+    <table id="tablaLicencias">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Tipo</th>
+          <th>IMEI</th>
+          <th>Comercio</th>
+          <th>Estado</th>
+          <th>Fecha</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <!-- 🔌 Script con conexión real a Supabase -->
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+    const supabase = createClient(
+      'https://TU_PROYECTO.supabase.co',
+      'TU_PUBLIC_KEY'
+    )
+
+    const feedback1 = document.getElementById('feedbackLicenciaIndividual')
+    const feedback2 = document.getElementById('feedbackLoteLicencias')
+    const tablaBody = document.querySelector('#tablaLicencias tbody')
+
+    // 🧑‍🔧 Crear licencia individual
+    document.getElementById('formLicenciaIndividual').addEventListener('submit', async (e) => {
+      e.preventDefault()
+      const tipo = document.getElementById('tipo').value
+      const imei = document.getElementById('imei').value.trim()
+      const comercio = document.getElementById('comercio').value.trim()
+
+      const { data, error } = await supabase
+        .from('licencias')
+        .insert([{ tipo, imei, comercio, estado: 'activa', fecha_creacion: new Date().toISOString() }])
+
+      if (error) {
+        feedback1.textContent = '❌ Error: ' + error.message
+        feedback1.style.color = 'red'
+      } else {
+        feedback1.textContent = '✅ Licencia creada con ID: ' + data[0].id
+        feedback1.style.color = 'green'
+        e.target.reset()
+        cargarLicencias()
+      }
+    })
+
+    // 📦 Crear lote de licencias
+    document.getElementById('formLoteLicencias').addEventListener('submit', async (e) => {
+      e.preventDefault()
+      const cantidad = parseInt(document.getElementById('cantidad').value)
+      const tipo = document.getElementById('tipoLote').value
+      const comercio = document.getElementById('comercioLote').value.trim()
+
+      const lote = Array.from({ length: cantidad }, () => ({
+        tipo, imei: null, comercio, estado: 'activa', fecha_creacion: new Date().toISOString()
+      }))
+
+      const { error } = await supabase.from('licencias').insert(lote)
+
+      if (error) {
+        feedback2.textContent = '❌ Error: ' + error.message
+        feedback2.style.color = 'red'
+      } else {
+        feedback2.textContent = `✅ Lote de ${cantidad} licencias creado`
+        feedback2.style.color = 'green'
+        e.target.reset()
+        cargarLicencias()
+      }
+    })
+
+    // 📊 Cargar tabla de licencias
+    async function cargarLicencias() {
+      const { data, error } = await supabase
+        .from('licencias')
+        .select('*')
+        .order('fecha_creacion', { ascending: false })
+        .limit(100)
+
+      tablaBody.innerHTML = ''
+      if (data) {
+        data.forEach(lic => {
+          const row = document.createElement('tr')
+          row.innerHTML = `
+            <td>${lic.id}</td>
+            <td>${lic.tipo}</td>
+            <td>${lic.imei || '-'}</td>
+            <td>${lic.comercio}</td>
+            <td>${lic.estado}</td>
+            <td>${new Date(lic.fecha_creacion).toLocaleString()}</td>
+          `
+          tablaBody.appendChild(row)
+        })
+      }
+    }
+
+    cargarLicencias()
+  </script>
+</body>
+</html>
