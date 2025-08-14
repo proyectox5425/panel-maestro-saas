@@ -1,0 +1,14 @@
+name: apk_institucional
+description: Validación institucional por IMEI y licencia
+version: 1.0.0
+
+environment:
+  sdk: ">=2.17.0 <3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  supabase_flutter: ^1.10.0
+  device_info_plus: ^9.0.2
+  imei_plugin: ^1.2.0
+  image_picker: ^1.0.4
