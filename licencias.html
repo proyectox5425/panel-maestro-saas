@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gestión de Licencias</title>
+  <script src="https://unpkg.com/@supabase/supabase-js"></script>
   <style>
     body { font-family: sans-serif; padding: 20px; }
     .modulo { margin-bottom: 40px; }
@@ -29,8 +30,10 @@
       <label for="imei">IMEI del dispositivo:</label>
       <input type="text" id="imei" required maxlength="20" />
 
-      <label for="comercio">Comercio asignado:</label>
-      <input type="text" id="comercio" required />
+      <label for="selector_comercio">Comercio asignado:</label>
+      <select id="selector_comercio" required>
+        <option value="">Selecciona un comercio</option>
+      </select>
 
       <button type="submit">Crear licencia</button>
     </form>
@@ -51,8 +54,10 @@
         <option value="navegacion_limitada">Navegación limitada</option>
       </select>
 
-      <label for="comercioLote">Comercio asignado:</label>
-      <input type="text" id="comercioLote" required />
+      <label for="selector_comercio_lote">Comercio asignado:</label>
+      <select id="selector_comercio_lote" required>
+        <option value="">Selecciona un comercio</option>
+      </select>
 
       <button type="submit">Crear lote</button>
     </form>
@@ -63,6 +68,12 @@
   <!-- 📊 Bloque 3: Tabla de licencias -->
   <section id="tabla-licencias" class="modulo">
     <h2>Licencias Existentes</h2>
+    <label for="filtroEstado">Filtrar por estado:</label>
+<select id="filtroEstado">
+  <option value="todas">Todas</option>
+  <option value="activa">Activas</option>
+  <option value="inactiva">Inactivas</option>
+</select>
     <table id="tablaLicencias">
       <thead>
         <tr>
@@ -78,91 +89,117 @@
     </table>
   </section>
 
-  <!-- 🔌 Script con conexión real a Supabase -->
-  <script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+  <!-- 🔌 Script funcional -->
+  <script>
+    const supabase = supabase.createClient(
+      'https://xhqhtzrcohovylcxibkf.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhocWh0enJjb2hvdnlsY3hpYmtmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4Njg3NTEsImV4cCI6MjA3MDQ0NDc1MX0.aTAOD-m3n2n6MAg1Cx2lDOPAD4jT2z4bcQXjxZwgllI'
+    );
 
-    const supabase = createClient(
-      'https://TU_PROYECTO.supabase.co',
-      'TU_PUBLIC_KEY'
-    )
+    const feedback1 = document.getElementById('feedbackLicenciaIndividual');
+    const feedback2 = document.getElementById('feedbackLoteLicencias');
+    const tablaBody = document.querySelector('#tablaLicencias tbody');
 
-    const feedback1 = document.getElementById('feedbackLicenciaIndividual')
-    const feedback2 = document.getElementById('feedbackLoteLicencias')
-    const tablaBody = document.querySelector('#tablaLicencias tbody')
+    async function cargarSelectorComercios() {
+      const { data, error } = await supabase.from('comercios').select('id, nombre').eq('estado', 'activo');
+      const selector1 = document.getElementById('selector_comercio');
+      const selector2 = document.getElementById('selector_comercio_lote');
+      selector1.innerHTML = '<option value="">Selecciona un comercio</option>';
+      selector2.innerHTML = '<option value="">Selecciona un comercio</option>';
 
-    // 🧑‍🔧 Crear licencia individual
-    document.getElementById('formLicenciaIndividual').addEventListener('submit', async (e) => {
-      e.preventDefault()
-      const tipo = document.getElementById('tipo').value
-      const imei = document.getElementById('imei').value.trim()
-      const comercio = document.getElementById('comercio').value.trim()
+      if (error) return console.error('Error al cargar comercios:', error.message);
 
-      const { data, error } = await supabase
-        .from('licencias')
-        .insert([{ tipo, imei, comercio, estado: 'activa', fecha_creacion: new Date().toISOString() }])
+      data.forEach(c => {
+        const option1 = document.createElement('option');
+        option1.value = c.id;
+        option1.textContent = c.nombre;
+        selector1.appendChild(option1);
 
-      if (error) {
-        feedback1.textContent = '❌ Error: ' + error.message
-        feedback1.style.color = 'red'
-      } else {
-        feedback1.textContent = '✅ Licencia creada con ID: ' + data[0].id
-        feedback1.style.color = 'green'
-        e.target.reset()
-        cargarLicencias()
-      }
-    })
-
-    // 📦 Crear lote de licencias
-    document.getElementById('formLoteLicencias').addEventListener('submit', async (e) => {
-      e.preventDefault()
-      const cantidad = parseInt(document.getElementById('cantidad').value)
-      const tipo = document.getElementById('tipoLote').value
-      const comercio = document.getElementById('comercioLote').value.trim()
-
-      const lote = Array.from({ length: cantidad }, () => ({
-        tipo, imei: null, comercio, estado: 'activa', fecha_creacion: new Date().toISOString()
-      }))
-
-      const { error } = await supabase.from('licencias').insert(lote)
-
-      if (error) {
-        feedback2.textContent = '❌ Error: ' + error.message
-        feedback2.style.color = 'red'
-      } else {
-        feedback2.textContent = `✅ Lote de ${cantidad} licencias creado`
-        feedback2.style.color = 'green'
-        e.target.reset()
-        cargarLicencias()
-      }
-    })
-
-    // 📊 Cargar tabla de licencias
-    async function cargarLicencias() {
-      const { data, error } = await supabase
-        .from('licencias')
-        .select('*')
-        .order('fecha_creacion', { ascending: false })
-        .limit(100)
-
-      tablaBody.innerHTML = ''
-      if (data) {
-        data.forEach(lic => {
-          const row = document.createElement('tr')
-          row.innerHTML = `
-            <td>${lic.id}</td>
-            <td>${lic.tipo}</td>
-            <td>${lic.imei || '-'}</td>
-            <td>${lic.comercio}</td>
-            <td>${lic.estado}</td>
-            <td>${new Date(lic.fecha_creacion).toLocaleString()}</td>
-          `
-          tablaBody.appendChild(row)
-        })
-      }
+        const option2 = document.createElement('option');
+        option2.value = c.id;
+        option2.textContent = c.nombre;
+        selector2.appendChild(option2);
+      });
     }
 
-    cargarLicencias()
+    document.getElementById('formLicenciaIndividual').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const tipo = document.getElementById('tipo').value;
+      const imei = document.getElementById('imei').value.trim();
+      const comercio_id = document.getElementById('selector_comercio').value;
+
+      const { data, error } = await supabase
+        .from('licencias')
+        .insert([{ tipo, imei, comercio_id, estado: 'activa', fecha_creacion: new Date().toISOString() }]);
+
+      if (error) {
+        feedback1.textContent = '❌ Error: ' + error.message;
+        feedback1.style.color = 'red';
+      } else {
+        feedback1.textContent = '✅ Licencia creada con ID: ' + data[0].id;
+        feedback1.style.color = 'green';
+        e.target.reset();
+        cargarLicencias();
+      }
+    });
+
+    document.getElementById('formLoteLicencias').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const cantidad = parseInt(document.getElementById('cantidad').value);
+      const tipo = document.getElementById('tipoLote').value;
+      const comercio_id = document.getElementById('selector_comercio_lote').value;
+
+      const lote = Array.from({ length: cantidad }, () => ({
+        tipo, imei: null, comercio_id, estado: 'activa', fecha_creacion: new Date().toISOString()
+      }));
+
+      const { error } = await supabase.from('licencias').insert(lote);
+
+      if (error) {
+        feedback2.textContent = '❌ Error: ' + error.message;
+        feedback2.style.color = 'red';
+      } else {
+        feedback2.textContent = `✅ Lote de ${cantidad} licencias creado`;
+        feedback2.style.color = 'green';
+        e.target.reset();
+        cargarLicencias();
+      }
+    });
+
+    async function cargarLicencias() {
+  const estadoSeleccionado = document.getElementById('filtroEstado').value;
+  let query = supabase
+    .from('licencias')
+    .select('id, tipo, imei, estado, fecha_creacion, comercios(nombre)')
+    .order('fecha_creacion', { ascending: false })
+    .limit(100);
+
+  if (estadoSeleccionado !== 'todas') {
+    query = query.eq('estado', estadoSeleccionado);
+  }
+
+  const { data, error } = await query;
+
+  tablaBody.innerHTML = '';
+  if (data) {
+    data.forEach(lic => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${lic.id}</td>
+        <td>${lic.tipo}</td>
+        <td>${lic.imei || '-'}</td>
+        <td>${lic.comercios?.nombre || '-'}</td>
+        <td>${lic.estado}</td>
+        <td>${new Date(lic.fecha_creacion).toLocaleString()}</td>
+      `;
+      tablaBody.appendChild(row);
+    });
+  }
+        }
+
+    cargarSelectorComercios();
+    cargarLicencias();
+    document.getElementById('filtroEstado').addEventListener('change', cargarLicencias);
   </script>
 </body>
-</html>
+  </html>
