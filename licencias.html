@@ -176,6 +176,24 @@
     </table>
   </section>
 
+  <!-- 🧭 Bloque: Dispositivos Instalados -->
+<section id="dispositivos-instalados" class="modulo">
+  <h2>Dispositivos Instalados</h2>
+  <table id="tablaInstalados">
+    <thead>
+      <tr>
+        <th>IMEI</th>
+        <th>Token</th>
+        <th>Tipo</th>
+        <th>Comercio</th>
+        <th>Estado</th>
+        <th>Fecha</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</section>
+
   <!-- 🔌 Script funcional -->
   <script>
     const supabase = supabase.createClient(
@@ -287,6 +305,39 @@
     cargarSelectorComercios();
     cargarLicencias();
     document.getElementById('filtroEstado').addEventListener('change', cargarLicencias);
+
+    async function cargarInstalados() {
+  const { data, error } = await supabase
+    .from('licencias')
+    .select('imei, token, tipo, estado, fecha_creacion, comercios(nombre)')
+    .not('imei', 'is', null)
+    .order('fecha_creacion', { ascending: false })
+    .limit(100);
+
+  const tablaBody = document.querySelector('#tablaInstalados tbody');
+  tablaBody.innerHTML = '';
+
+  if (error) {
+    console.error('Error al cargar dispositivos instalados:', error.message);
+    return;
+  }
+
+  data.forEach(row => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${row.imei}</td>
+      <td>${row.token}</td>
+      <td>${row.tipo}</td>
+      <td>${row.comercios?.nombre || '-'}</td>
+      <td>${row.estado}</td>
+      <td>${new Date(row.fecha_creacion).toLocaleString()}</td>
+    `;
+    tablaBody.appendChild(tr);
+  });
+}
+
+// Ejecutar al cargar la página
+cargarInstalados();
   </script>
 </body>
   </html>
