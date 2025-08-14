@@ -18,52 +18,139 @@
   <h1>Panel de Licencias</h1>
 
   <!-- 🔧 Bloque 1: Generar licencia individual -->
-  <section id="crear-licencia-individual" class="modulo">
-    <h2>Generar Licencia Individual</h2>
-    <form id="formLicenciaIndividual">
-      <label for="tipo">Tipo de licencia:</label>
-      <select id="tipo" required>
-        <option value="bloqueo_total">Bloqueo total</option>
-        <option value="navegacion_limitada">Navegación limitada</option>
-      </select>
+<section id="crear-licencia-individual" class="modulo">
+  <h2>Generar Licencia Individual</h2>
+  <form id="formLicenciaIndividual">
+    <label for="tipo">Tipo de licencia:</label>
+    <select id="tipo" required>
+      <option value="bloqueo_total">Bloqueo total</option>
+      <option value="navegacion_limitada">Navegación limitada</option>
+    </select>
 
-      <label for="imei">IMEI del dispositivo:</label>
-      <input type="text" id="imei" required maxlength="20" />
+    <label for="imei">IMEI del dispositivo:</label>
+    <input type="text" id="imei" required maxlength="20" />
 
-      <label for="selector_comercio">Comercio asignado:</label>
-      <select id="selector_comercio" required>
-        <option value="">Selecciona un comercio</option>
-      </select>
+    <label for="selector_comercio">Comercio asignado:</label>
+    <select id="selector_comercio" required>
+      <option value="">Selecciona un comercio</option>
+    </select>
 
-      <button type="submit">Crear licencia</button>
-    </form>
+    <button type="submit">Crear licencia</button>
+  </form>
 
-    <div id="feedbackLicenciaIndividual" class="feedback"></div>
-  </section>
+  <div id="feedbackLicenciaIndividual" class="feedback"></div>
+</section>
+
+<script>
+  function generarToken() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    return Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  }
+
+  document.getElementById('formLicenciaIndividual').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const tipo = document.getElementById('tipo').value;
+    const imei = document.getElementById('imei').value.trim();
+    const comercio_id = document.getElementById('selector_comercio').value;
+
+    const token = generarToken();
+    const link_instalacion = `https://tudominio.com/instalar?token=${token}`;
+
+    const { data, error } = await supabase
+      .from('licencias')
+      .insert([{
+        tipo,
+        imei,
+        comercio_id,
+        estado: 'activa',
+        fecha_creacion: new Date().toISOString(),
+        token,
+        link_instalacion
+      }]);
+
+    const feedback1 = document.getElementById('feedbackLicenciaIndividual');
+
+    if (error) {
+      feedback1.textContent = '❌ Error: ' + error.message;
+      feedback1.style.color = 'red';
+    } else {
+      feedback1.innerHTML = `
+        ✅ Licencia creada con ID: ${data[0].id}<br>
+        🔗 <a href="${link_instalacion}" target="_blank">${link_instalacion}</a><br>
+        📱 <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(link_instalacion)}" alt="QR de instalación" />
+      `;
+      feedback1.style.color = 'green';
+      e.target.reset();
+      cargarLicencias();
+    }
+  });
+</script>
 
   <!-- 📦 Bloque 2: Generar lote de licencias -->
-  <section id="crear-lote-licencias" class="modulo">
-    <h2>Generar Lote de Licencias</h2>
-    <form id="formLoteLicencias">
-      <label for="cantidad">Cantidad:</label>
-      <input type="number" id="cantidad" required min="1" max="1000" />
+<section id="crear-lote-licencias" class="modulo">
+  <h2>Generar Lote de Licencias</h2>
+  <form id="formLoteLicencias">
+    <label for="cantidad">Cantidad:</label>
+    <input type="number" id="cantidad" required min="1" max="1000" />
 
-      <label for="tipoLote">Tipo de licencia:</label>
-      <select id="tipoLote" required>
-        <option value="bloqueo_total">Bloqueo total</option>
-        <option value="navegacion_limitada">Navegación limitada</option>
-      </select>
+    <label for="tipoLote">Tipo de licencia:</label>
+    <select id="tipoLote" required>
+      <option value="bloqueo_total">Bloqueo total</option>
+      <option value="navegacion_limitada">Navegación limitada</option>
+    </select>
 
-      <label for="selector_comercio_lote">Comercio asignado:</label>
-      <select id="selector_comercio_lote" required>
-        <option value="">Selecciona un comercio</option>
-      </select>
+    <label for="selector_comercio_lote">Comercio asignado:</label>
+    <select id="selector_comercio_lote" required>
+      <option value="">Selecciona un comercio</option>
+    </select>
 
-      <button type="submit">Crear lote</button>
-    </form>
+    <button type="submit">Crear lote</button>
+  </form>
 
-    <div id="feedbackLoteLicencias" class="feedback"></div>
-  </section>
+  <div id="feedbackLoteLicencias" class="feedback"></div>
+</section>
+
+<script>
+  function generarToken() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    return Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  }
+
+  document.getElementById('formLoteLicencias').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const cantidad = parseInt(document.getElementById('cantidad').value);
+    const tipo = document.getElementById('tipoLote').value;
+    const comercio_id = document.getElementById('selector_comercio_lote').value;
+
+    const lote = Array.from({ length: cantidad }, () => {
+      const token = generarToken();
+      const link_instalacion = `https://tudominio.com/instalar?token=${token}`;
+      return {
+        tipo,
+        imei: null,
+        comercio_id,
+        estado: 'activa',
+        fecha_creacion: new Date().toISOString(),
+        token,
+        link_instalacion
+      };
+    });
+
+    const { error } = await supabase.from('licencias').insert(lote);
+
+    const feedback2 = document.getElementById('feedbackLoteLicencias');
+
+    if (error) {
+      feedback2.textContent = '❌ Error: ' + error.message;
+      feedback2.style.color = 'red';
+    } else {
+      feedback2.innerHTML = `✅ Lote de ${cantidad} licencias creado con tokens únicos.<br>Ya puedes verlas en la tabla.`;
+      feedback2.style.color = 'green';
+      e.target.reset();
+      cargarLicencias();
+    }
+  });
+</script>
 
   <!-- 📊 Bloque 3: Tabla de licencias -->
   <section id="tabla-licencias" class="modulo">
