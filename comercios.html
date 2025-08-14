@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Panel Maestro – Comercios</title>
+  <script src="https://unpkg.com/@supabase/supabase-js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 1rem; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: left; }
+    input, select, button { margin: 0.3rem; padding: 0.4rem; }
+    .form-block { margin-top: 1rem; }
+  </style>
+</head>
+<body>
+  <h2>🧩 Gestión de Comercios</h2>
+  <div class="form-block">
+    <input type="hidden" id="comercio_id" />
+    <input type="text" id="nombre" placeholder="Nombre del comercio" />
+    <input type="text" id="rif" placeholder="RIF" />
+    <select id="estado">
+      <option value="activo">Activo</option>
+      <option value="inactivo">Inactivo</option>
+    </select>
+    <button onclick="guardarComercio()">Guardar</button>
+  </div>
+
+  <table id="tabla_comercios">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Nombre</th>
+        <th>RIF</th>
+        <th>Estado</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const supabase = supabase.createClient(
+      'https://qvplvhhnbqvwnqzvnvck.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2cGx2aGhuYnF2d25xenZudmNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTg4MjY2NzEsImV4cCI6MjAxNDQwMjI3MX0.0zYvZzjKXJvZKX2kWZcZKJvZKX2kWZcZKJvZKX2kWZcZK'
+    );
+  </script>
+
+  <script>
+    async function cargarComercios() {
+      const { data, error } = await supabase.from('comercios').select('*');
+      const tbody = document.querySelector('#tabla_comercios tbody');
+      tbody.innerHTML = '';
+      if (error) {
+        console.error('Error al cargar comercios:', error.message);
+        return;
+      }
+      data.forEach(c => {
+        const fila = document.createElement('tr');
+        fila.innerHTML = `
+          <td>${c.id}</td>
+          <td>${c.nombre}</td>
+          <td>${c.rif}</td>
+          <td>${c.estado}</td>
+          <td>
+            <button onclick='editar(${JSON.stringify(c)})'>Editar</button>
+            <button onclick='eliminar("${c.id}")'>Eliminar</button>
+          </td>
+        `;
+        tbody.appendChild(fila);
+      });
+    }
+
+    function editar(c) {
+      document.getElementById('comercio_id').value = c.id;
+      document.getElementById('nombre').value = c.nombre;
+      document.getElementById('rif').value = c.rif;
+      document.getElementById('estado').value = c.estado;
+    }
+
+    async function guardarComercio() {
+      const id = document.getElementById('comercio_id').value;
+      const nombre = document.getElementById('nombre').value.trim();
+      const rif = document.getElementById('rif').value.trim();
+      const estado = document.getElementById('estado').value;
+
+      if (!nombre || !rif) return alert('Completa todos los campos');
+
+      if (id) {
+        await supabase.from('comercios').update({ nombre, rif, estado }).eq('id', id);
+      } else {
+        await supabase.from('comercios').insert({ nombre, rif, estado });
+      }
+
+      document.getElementById('comercio_id').value = '';
+      document.getElementById('nombre').value = '';
+      document.getElementById('rif').value = '';
+      cargarComercios();
+    }
+
+    async function eliminar(id) {
+      if (confirm('¿Eliminar este comercio?')) {
+        await supabase.from('comercios').delete().eq('id', id);
+        cargarComercios();
+      }
+    }
+
+    cargarComercios();
+  </script>
+</body>
+</html>
