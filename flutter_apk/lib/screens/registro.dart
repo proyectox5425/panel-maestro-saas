@@ -11,7 +11,7 @@ class RegistroDispositivo {
     final deviceInfo = DeviceInfoPlugin();
     final androidInfo = await deviceInfo.androidInfo;
 
-    final imei = androidInfo.id; // Alternativa si no hay acceso directo al IMEI
+    final imei = androidInfo.id;
     final modelo = androidInfo.model;
 
     final response = await supabase.rpc('rpc_registrar_dispositivo', params: {
@@ -23,6 +23,24 @@ class RegistroDispositivo {
 
     if (response.error != null) {
       throw Exception('Error al registrar: ${response.error!.message}');
+    }
+  }
+
+  // ⬇️ Pegá aquí el nuevo método
+  Future<void> registrarDesdeToken(String token) async {
+    final deviceInfo = DeviceInfoPlugin();
+    final androidInfo = await deviceInfo.androidInfo;
+
+    final imei = androidInfo.id;
+    final modelo = androidInfo.model;
+
+    final response = await supabase.rpc('rpc_enrolar_dispositivo', params: {
+      'token_input': token,
+      'imei_input': imei,
+    });
+
+    if (response.error != null) {
+      throw Exception('Error al registrar desde token: ${response.error!.message}');
     }
   }
 }
