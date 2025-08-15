@@ -205,6 +205,7 @@
     <select id="accionFinanciera" required>
       <option value="bloquear">Simular mora (bloquear)</option>
       <option value="desbloquear">Registrar pago (desbloquear)</option>
+      <option value="revocar">Revocar licencia</option>
     </select>
 
     <button type="submit">Ejecutar acción</button>
@@ -366,10 +367,22 @@ cargarInstalados();
 
   let nuevoEstado = accion === 'bloquear' ? 'bloqueado' : 'activa';
 
-  const { error } = await supabase
-    .from('licencias')
-    .update({ estado: nuevoEstado })
-    .eq('imei', imei);
+  const { data: existe } = await supabase
+  .from('licencias')
+  .select('id')
+  .eq('imei', imei)
+  .single();
+
+if (!existe) {
+  feedback.textContent = '❌ IMEI no encontrado';
+  feedback.style.color = 'red';
+  return;
+}
+
+const { error } = await supabase
+  .from('licencias')
+  .update({ estado: nuevoEstado })
+  .eq('imei', imei);
 
   if (error) {
     feedback.textContent = '❌ Error: ' + error.message;
@@ -388,6 +401,36 @@ cargarInstalados();
     cargarInstalados();
   }
 });
+
+    async function verHistorial() {
+  const imei = document.getElementById('imeiHistorial').value.trim();
+  const { data, error } = await supabase
+    .from('eventos_dispositivo')
+    .select('fecha, tipo_evento')
+    .eq('imei', imei)
+    .order('fecha', { ascending: false });
+
+  const tbody = document.getElementById('tablaHistorial');
+  tbody.innerHTML = '';
+
+  if (data) {
+    data.forEach(ev => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${new Date(ev.fecha).toLocaleString()}</td><td>${ev.tipo_evento}</td>`;
+      tbody.appendChild(tr);
+    });
+  }
+    }
   </script>
+
+  <section id="historial-eventos" class="modulo">
+  <h2>Historial de Eventos</h2>
+  <input type="text" id="imeiHistorial" placeholder="IMEI a consultar" maxlength="20" />
+  <button onclick="verHistorial()">Ver historial</button>
+  <table>
+    <thead><tr><th>Fecha</th><th>Evento</th></tr></thead>
+    <tbody id="tablaHistorial"></tbody>
+  </table>
+  </section>
 </body>
   </html>
