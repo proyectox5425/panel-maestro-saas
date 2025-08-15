@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Panel del Comercio</title>
+  <script src="https://unpkg.com/@supabase/supabase-js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 1rem; }
+    .modulo { margin-bottom: 2rem; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: left; }
+    input, button { margin: 0.3rem; padding: 0.4rem; }
+  </style>
+</head>
+<body>
+  <h2>📦 Panel del Comercio</h2>
+
+  <!-- 🔐 Login -->
+  <section class="modulo">
+    <h3>Acceso institucional</h3>
+    <input type="email" id="correoLogin" placeholder="Correo del comercio" />
+    <input type="password" id="claveLogin" placeholder="Clave asignada" />
+    <button onclick="loginComercio()">Ingresar</button>
+    <div id="feedbackLogin"></div>
+  </section>
+
+  <!-- 📦 Catálogo de productos -->
+  <section class="modulo" id="moduloCatalogo" style="display:none;">
+    <h3>Catálogo de Productos</h3>
+    <table>
+      <thead><tr><th>Marca</th><th>Modelo</th><th>Precio</th><th>Condiciones</th></tr></thead>
+      <tbody id="tablaCatalogo"></tbody>
+    </table>
+  </section>
+
+  <!-- 🎫 Licencias asignadas -->
+  <section class="modulo" id="moduloLicencias" style="display:none;">
+    <h3>Licencias Asignadas</h3>
+    <table>
+      <thead><tr><th>IMEI</th><th>Estado</th><th>Fecha</th><th>Acción</th></tr></thead>
+      <tbody id="tablaLicencias"></tbody>
+    </table>
+  </section>
+
+  <script>
+    const supabase = supabase.createClient('TU_URL', 'TU_API_KEY');
+    let comercio_id = null;
+
+    async function loginComercio() {
+      const correo = document.getElementById('correoLogin').value.trim();
+      const clave = document.getElementById('claveLogin').value.trim();
+      const feedback = document.getElementById('feedbackLogin');
+
+      const { data, error } = await supabase
+        .from('usuarios_comercio')
+        .select('comercio_id')
+        .eq('correo', correo)
+        .eq('clave', clave)
+        .single();
+
+      if (error || !data) {
+        feedback.textContent = '❌ Credenciales incorrectas';
+        feedback.style.color = 'red';
+        return;
+      }
+
+      comercio_id = data.comercio_id;
+      feedback.textContent = '✅ Acceso concedido';
+      feedback.style.color = 'green';
+
+      document.getElementById('moduloCatalogo').style.display = 'block';
+      document.getElementById('moduloLicencias').style.display = 'block';
+
+      cargarCatalogo();
+      cargarLicencias();
+    }
+
+    async function cargarCatalogo() {
+      const { data } = await supabase
+        .from('catalogo')
+        .select('*')
+        .eq('comercio_id', comercio_id);
+
+      const tbody = document.getElementById('tablaCatalogo');
+      tbody.innerHTML = '';
+      data.forEach(p => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${p.marca}</td><td>${p.modelo}</td><td>$${p.precio}</td><td>${p.condiciones}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function cargarLicencias() {
+      const { data } = await supabase
+        .from('licencias')
+        .select('imei, estado, fecha_creacion')
+        .eq('comercio_id', comercio_id)
+        .order('fecha_creacion', { ascending: false });
+
+      const tbody = document.getElementById('tablaLicencias');
+      tbody.innerHTML = '';
+      data.forEach(l => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${l.imei || '-'}</td>
+          <td>${l.estado}</td>
+          <td>${new Date(l.fecha_creacion).toLocaleString()}</td>
+          <td>
+            ${l.estado === 'bloqueado' ? 
+              `<button onclick="desbloquear('${l.imei}')">Desbloquear</button>` :
+              `<button onclick="bloquear('${l.imei}')">Bloquear</button>`}
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function bloquear(imei) {
+      await supabase.from('licencias').update({ estado: 'bloqueado' }).eq('imei', imei);
+      await supabase.from('eventos_dispositivo').insert({ imei, tipo_evento: 'bloqueo', fecha: new Date().toISOString() });
+      cargarLicencias();
+    }
+
+    async function desbloquear(imei) {
+      await supabase.from('licencias').update({ estado: 'activa' }).eq('imei', imei);
+      await supabase.from('eventos_dispositivo').insert({ imei, tipo_evento: 'desbloqueo', fecha: new Date().toISOString() });
+      cargarLicencias();
+    }
+  </script>
+</body>
+  </html>
