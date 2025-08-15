@@ -42,6 +42,39 @@
     </table>
   </section>
 
+  <!-- 💳 Módulo financiero -->
+<section class="modulo" id="moduloFinanciero" style="display:none;">
+  <h3>Pagos y Validación Financiera</h3>
+
+  <table>
+    <thead><tr><th>IMEI</th><th>Monto</th><th>Fecha</th><th>Estado</th><th>Acción</th></tr></thead>
+    <tbody id="tablaPagos"></tbody>
+  </table>
+
+  <h4>Registrar nuevo pago</h4>
+  <input type="text" id="imeiPago" placeholder="IMEI del dispositivo" />
+  <input type="number" id="montoPago" placeholder="Monto en USD" />
+  <button onclick="registrarPago()">Registrar</button>
+  <div id="feedbackPago"></div>
+</section>
+
+  <!-- 🧑‍💼 Módulo de vendedores -->
+<section class="modulo" id="moduloVendedores" style="display:none;">
+  <h3>Gestión de Vendedores</h3>
+
+  <table>
+    <thead><tr><th>Correo</th><th>Nombre</th><th>Licencias asignadas</th><th>Acción</th></tr></thead>
+    <tbody id="tablaVendedores"></tbody>
+  </table>
+
+  <h4>Registrar nuevo vendedor</h4>
+  <input type="email" id="correoVendedor" placeholder="Correo institucional" />
+  <input type="text" id="nombreVendedor" placeholder="Nombre completo" />
+  <input type="password" id="claveVendedor" placeholder="Clave temporal" />
+  <button onclick="registrarVendedor()">Registrar</button>
+  <div id="feedbackVendedor"></div>
+</section>
+
   <script>
     const supabase = supabase.createClient('TU_URL', 'TU_API_KEY');
     let comercio_id = null;
@@ -70,7 +103,11 @@
 
       document.getElementById('moduloCatalogo').style.display = 'block';
       document.getElementById('moduloLicencias').style.display = 'block';
+      document.getElementById('moduloFinanciero').style.display = 'block';
+      document.getElementById('moduloVendedores').style.display = 'block';
 
+      cargarVendedores();
+      cargarPagos();
       cargarCatalogo();
       cargarLicencias();
     }
@@ -126,6 +163,135 @@
       await supabase.from('eventos_dispositivo').insert({ imei, tipo_evento: 'desbloqueo', fecha: new Date().toISOString() });
       cargarLicencias();
     }
+
+    async function cargarPagos() {
+  const { data } = await supabase
+    .from('pagos_licencia')
+    .select('imei, monto, fecha_pago, estado')
+    .eq('comercio_id', comercio_id)
+    .order('fecha_pago', { ascending: false });
+
+  const tbody = document.getElementById('tablaPagos');
+  tbody.innerHTML = '';
+  data.forEach(p => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${p.imei}</td>
+      <td>$${p.monto}</td>
+      <td>${new Date(p.fecha_pago).toLocaleString()}</td>
+      <td>${p.estado}</td>
+      <td>
+        ${p.estado === 'pendiente' ? 
+          `<button onclick="validarPago('${p.imei}')">Validar</button>` :
+          `<span>✔️</span>`}
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+async function registrarPago() {
+  const imei = document.getElementById('imeiPago').value.trim();
+  const monto = parseFloat(document.getElementById('montoPago').value);
+  const feedback = document.getElementById('feedbackPago');
+
+  if (!imei || isNaN(monto)) {
+    feedback.textContent = '❌ Datos incompletos';
+    feedback.style.color = 'red';
+    return;
+  }
+
+  await supabase.from('pagos_licencia').insert({
+    imei,
+    monto,
+    fecha_pago: new Date().toISOString(),
+    estado: 'pendiente',
+    comercio_id
+  });
+
+  feedback.textContent = '✅ Pago registrado';
+  feedback.style.color = 'green';
+  cargarPagos();
+}
+
+async function validarPago(imei) {
+  await supabase.from('pagos_licencia')
+    .update({ estado: 'validado' })
+    .eq('imei', imei);
+
+  await supabase.from('eventos_dispositivo').insert({
+    imei,
+    tipo_evento: 'pago_validado',
+    fecha: new Date().toISOString()
+  });
+
+  cargarPagos();
+    }
+
+    async function cargarVendedores() {
+  const { data } = await supabase
+    .from('vendedores')
+    .select('correo, nombre, vendedor_id')
+    .eq('comercio_id', comercio_id);
+
+  const tbody = document.getElementById('tablaVendedores');
+  tbody.innerHTML = '';
+
+  for (const v of data) {
+    const { data: licencias } = await supabase
+      .from('licencias')
+      .select('id')
+      .eq('vendedor_id', v.vendedor_id);
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${v.correo}</td>
+      <td>${v.nombre}</td>
+      <td>${licencias.length}</td>
+      <td><button onclick="asignarLicencia('${v.vendedor_id}')">Asignar licencia</button></td>
+    `;
+    tbody.appendChild(tr);
+  }
+}
+
+async function registrarVendedor() {
+  const correo = document.getElementById('correoVendedor').value.trim();
+  const nombre = document.getElementById('nombreVendedor').value.trim();
+  const clave = document.getElementById('claveVendedor').value.trim();
+  const feedback = document.getElementById('feedbackVendedor');
+
+  if (!correo || !nombre || !clave) {
+    feedback.textContent = '❌ Datos incompletos';
+    feedback.style.color = 'red';
+    return;
+  }
+
+  await supabase.from('vendedores').insert({
+    correo, nombre, clave, comercio_id
+  });
+
+  feedback.textContent = '✅ Vendedor registrado';
+  feedback.style.color = 'green';
+  cargarVendedores();
+}
+
+async function asignarLicencia(vendedor_id) {
+  const imei = prompt('IMEI a asignar:');
+  if (!imei) return;
+
+  await supabase.from('licencias')
+    .update({ vendedor_id })
+    .eq('imei', imei);
+
+  await supabase.from('eventos_dispositivo').insert({
+    imei,
+    tipo_evento: 'asignacion_vendedor',
+    vendedor_id,
+    fecha: new Date().toISOString()
+  });
+
+  cargarVendedores();
+  }
   </script>
 </body>
   </html>
