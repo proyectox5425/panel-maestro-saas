@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Auditoría Institucional</title>
+  <script src="https://unpkg.com/@supabase/supabase-js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    .modulo { margin-bottom: 40px; }
+    label, input, button { display: block; margin: 10px 0; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+  </style>
+</head>
+<body>
+  <h1>Auditoría Institucional</h1>
+
+  <!-- 🔍 Auditoría por IMEI -->
+  <section class="modulo">
+    <h2>Historial por IMEI</h2>
+    <input type="text" id="imeiAuditoria" placeholder="IMEI a consultar" />
+    <button onclick="verHistorialIMEI()">Ver historial</button>
+    <table>
+      <thead><tr><th>Fecha</th><th>Evento</th><th>Panel</th><th>Usuario</th></tr></thead>
+      <tbody id="tablaHistorialIMEI"></tbody>
+    </table>
+  </section>
+
+  <!-- 🧾 Auditoría por Comercio -->
+  <section class="modulo">
+    <h2>Licencias por Comercio</h2>
+    <table>
+      <thead><tr><th>Comercio</th><th>Activas</th><th>Bloqueadas</th><th>Revocadas</th><th>Sin instalar</th><th>Total</th></tr></thead>
+      <tbody id="tablaAuditoriaComercio"></tbody>
+    </table>
+    <button onclick="exportarAuditoriaComercio()">Exportar CSV</button>
+  </section>
+
+  <!-- 📜 Observaciones institucionales -->
+  <section class="modulo">
+    <h2>Registrar Observación</h2>
+    <input type="text" id="imeiObs" placeholder="IMEI (opcional)" />
+    <textarea id="textoObs" placeholder="Observación institucional"></textarea>
+    <button onclick="registrarObservacion()">Guardar observación</button>
+  </section>
+
+  <script>
+    const supabase = supabase.createClient('TU_URL', 'TU_API_KEY');
+
+    async function verHistorialIMEI() {
+      const imei = document.getElementById('imeiAuditoria').value.trim();
+      const { data } = await supabase
+        .from('eventos')
+        .select('fecha, tipo_evento, panel, usuario')
+        .eq('imei', imei)
+        .order('fecha', { ascending: false });
+
+      const tbody = document.getElementById('tablaHistorialIMEI');
+      tbody.innerHTML = '';
+      data.forEach(ev => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${new Date(ev.fecha).toLocaleString()}</td><td>${ev.tipo_evento}</td><td>${ev.panel}</td><td>${ev.usuario}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function cargarAuditoriaComercio() {
+      const { data: comercios } = await supabase.from('comercios').select('id, nombre').eq('estado', 'activo');
+      const tbody = document.getElementById('tablaAuditoriaComercio');
+      tbody.innerHTML = '';
+
+      for (const comercio of comercios) {
+        const { data: licencias } = await supabase.from('licencias').select('estado, imei').eq('comercio_id', comercio.id);
+        const total = licencias.length;
+        const activas = licencias.filter(l => l.estado === 'activa').length;
+        const bloqueadas = licencias.filter(l => l.estado === 'bloqueado').length;
+        const revocadas = licencias.filter(l => l.estado === 'revocada').length;
+        const sinInstalar = licencias.filter(l => !l.imei).length;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${comercio.nombre}</td><td>${activas}</td><td>${bloqueadas}</td><td>${revocadas}</td><td>${sinInstalar}</td><td>${total}</td>`;
+        tbody.appendChild(tr);
+      }
+    }
+
+    function exportarAuditoriaComercio() {
+      const rows = Array.from(document.querySelectorAll('#tablaAuditoriaComercio tr'));
+      const csv = rows.map(row =>
+        Array.from(row.children).map(cell => `"${cell.textContent}"`).join(',')
+      ).join('\n');
+
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'auditoria_comercio.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    async function registrarObservacion() {
+      const imei = document.getElementById('imeiObs').value.trim();
+      const texto = document.getElementById('textoObs').value.trim();
+      if (!texto) return alert('Observación vacía');
+
+      await supabase.from('eventos').insert({
+        imei: imei || null,
+        tipo_evento: 'observacion',
+        usuario: 'maestro',
+        panel: 'auditoria',
+        fecha: new Date().toISOString(),
+        observacion: texto
+      });
+
+      alert('✅ Observación registrada');
+      document.getElementById('imeiObs').value = '';
+      document.getElementById('textoObs').value = '';
+    }
+
+    cargarAuditoriaComercio();
+  </script>
+</body>
+      </html>
