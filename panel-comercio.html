@@ -31,6 +31,45 @@
       <thead><tr><th>Marca</th><th>Modelo</th><th>Precio</th><th>Condiciones</th></tr></thead>
       <tbody id="tablaCatalogo"></tbody>
     </table>
+
+    <h3>📦 Agregar producto</h3>
+<input type="text" id="nombreProducto" placeholder="Nombre del producto">
+<input type="number" id="precioProducto" placeholder="Precio">
+<button onclick="agregarProducto()">Agregar</button>
+<p id="feedbackProducto"></p>
+
+    <h3>📋 Catálogo de productos</h3>
+<table>
+  <thead><tr><th>Nombre</th><th>Precio</th><th>Estado</th></tr></thead>
+  <tbody id="tablaProductos"></tbody>
+</table>
+
+    <h3>📋 Catálogo de productos</h3>
+<table>
+  <thead>
+    <tr><th>Nombre</th><th>Precio</th><th>Estado</th><th>Acción</th></tr>
+  </thead>
+  <tbody id="tablaProductos"></tbody>
+</table>
+
+    <h3>💰 Registrar venta</h3>
+<select id="selectVendedor"></select>
+<select id="selectProducto"></select>
+<input type="number" id="montoVenta" placeholder="Monto">
+<button onclick="registrarVenta()">Registrar</button>
+<p id="feedbackVenta"></p>
+
+    <h3>📊 Resumen por vendedor</h3>
+<table>
+  <thead><tr><th>Vendedor</th><th>Total vendido</th></tr></thead>
+  <tbody id="resumenVendedor"></tbody>
+</table>
+
+<h3>📦 Resumen por producto</h3>
+<table>
+  <thead><tr><th>Producto</th><th>Total vendido</th></tr></thead>
+  <tbody id="resumenProducto"></tbody>
+</table>
   </section>
 
   <!-- 🎫 Licencias asignadas -->
@@ -106,6 +145,12 @@
       document.getElementById('moduloFinanciero').style.display = 'block';
       document.getElementById('moduloVendedores').style.display = 'block';
 
+      await supabase.from('eventos_dispositivo').insert({
+  tipo_evento: 'login_comercio',
+  usuario: correo,
+  fecha: new Date().toISOString()
+});
+
       cargarVendedores();
       cargarPagos();
       cargarCatalogo();
@@ -153,16 +198,20 @@
     }
 
     async function bloquear(imei) {
-      await supabase.from('licencias').update({ estado: 'bloqueado' }).eq('imei', imei);
-      await supabase.from('eventos_dispositivo').insert({ imei, tipo_evento: 'bloqueo', fecha: new Date().toISOString() });
-      cargarLicencias();
-    }
+  if (!confirm(`¿Confirmar bloqueo del IMEI ${imei}?`)) return;
 
-    async function desbloquear(imei) {
-      await supabase.from('licencias').update({ estado: 'activa' }).eq('imei', imei);
-      await supabase.from('eventos_dispositivo').insert({ imei, tipo_evento: 'desbloqueo', fecha: new Date().toISOString() });
-      cargarLicencias();
-    }
+  await supabase.from('licencias').update({ estado: 'bloqueado' }).eq('imei', imei);
+  await supabase.from('eventos_dispositivo').insert({ imei, tipo_evento: 'bloqueo', fecha: new Date().toISOString() });
+  cargarLicencias();
+}
+
+async function desbloquear(imei) {
+  if (!confirm(`¿Confirmar desbloqueo del IMEI ${imei}?`)) return;
+
+  await supabase.from('licencias').update({ estado: 'activa' }).eq('imei', imei);
+  await supabase.from('eventos_dispositivo').insert({ imei, tipo_evento: 'desbloqueo_manual', fecha: new Date().toISOString() });
+  cargarLicencias();
+}
 
     async function cargarPagos() {
   const { data } = await supabase
@@ -215,17 +264,37 @@ async function registrarPago() {
 }
 
 async function validarPago(imei) {
+  // Validar el pago
   await supabase.from('pagos_licencia')
     .update({ estado: 'validado' })
     .eq('imei', imei);
 
+  // Registrar evento
   await supabase.from('eventos_dispositivo').insert({
     imei,
     tipo_evento: 'pago_validado',
     fecha: new Date().toISOString()
   });
 
+  // Verificar si el dispositivo está bloqueado
+  const { data } = await supabase
+    .from('licencias')
+    .select('estado')
+    .eq('imei', imei)
+    .single();
+
+  if (data && data.estado === 'bloqueado') {
+    // Desbloquear automáticamente
+    await supabase.from('licencias').update({ estado: 'activa' }).eq('imei', imei);
+    await supabase.from('eventos_dispositivo').insert({
+      imei,
+      tipo_evento: 'desbloqueo_automatico',
+      fecha: new Date().toISOString()
+    });
+  }
+
   cargarPagos();
+  cargarLicencias();
     }
 
     async function cargarVendedores() {
@@ -266,6 +335,18 @@ async function registrarVendedor() {
     return;
   }
 
+  const { data: existente } = await supabase
+    .from('vendedores')
+    .select('correo')
+    .eq('correo', correo)
+    .single();
+
+  if (existente) {
+    feedback.textContent = '❌ Correo ya registrado';
+    feedback.style.color = 'red';
+    return;
+  }
+
   await supabase.from('vendedores').insert({
     correo, nombre, clave, comercio_id
   });
@@ -273,7 +354,7 @@ async function registrarVendedor() {
   feedback.textContent = '✅ Vendedor registrado';
   feedback.style.color = 'green';
   cargarVendedores();
-}
+    }
 
 async function asignarLicencia(vendedor_id) {
   const imei = prompt('IMEI a asignar:');
@@ -292,6 +373,152 @@ async function asignarLicencia(vendedor_id) {
 
   cargarVendedores();
   }
+
+    async function agregarProducto() {
+  const nombre = document.getElementById('nombreProducto').value.trim();
+  const precio = parseFloat(document.getElementById('precioProducto').value);
+  const feedback = document.getElementById('feedbackProducto');
+
+  if (!nombre || isNaN(precio) || precio <= 0) {
+    feedback.textContent = '❌ Datos inválidos';
+    feedback.style.color = 'red';
+    return;
+  }
+
+  await supabase.from('productos_comercio').insert({
+    comercio_id,
+    nombre,
+    precio,
+    activo: true,
+    fecha_creado: new Date().toISOString()
+  });
+
+  feedback.textContent = '✅ Producto agregado';
+  feedback.style.color = 'green';
+  document.getElementById('nombreProducto').value = '';
+  document.getElementById('precioProducto').value = '';
+  cargarProductos(); // si tenés una tabla visual
+      }
+
+    async function cargarProductos() {
+  const { data: productos } = await supabase
+    .from('productos_comercio')
+    .select('*')
+    .eq('comercio_id', comercio_id)
+    .order('fecha_creado', { ascending: false });
+
+  const contenedor = document.getElementById('tablaProductos');
+  contenedor.innerHTML = productos.map(p => `
+    <tr>
+      <td>${p.nombre}</td>
+      <td>${p.precio}</td>
+      <td>${p.activo ? '🟢' : '🔴'}</td>
+    </tr>
+  `).join('');
+    }
+
+    async function toggleProducto(id, estadoActual) {
+  const nuevoEstado = !estadoActual;
+  const confirmacion = confirm(`¿Confirmar ${nuevoEstado ? 'activación' : 'desactivación'} del producto?`);
+  if (!confirmacion) return;
+
+  await supabase.from('productos_comercio')
+    .update({ activo: nuevoEstado })
+    .eq('id', id);
+
+  await supabase.from('eventos_dispositivo').insert({
+    tipo_evento: nuevoEstado ? 'producto_activado' : 'producto_desactivado',
+    producto_id: id,
+    fecha: new Date().toISOString()
+  });
+
+  cargarProductos();
+    }
+
+    async function registrarVenta() {
+  const vendedor_id = document.getElementById('selectVendedor').value;
+  const producto_id = document.getElementById('selectProducto').value;
+  const monto = parseFloat(document.getElementById('montoVenta').value);
+  const feedback = document.getElementById('feedbackVenta');
+
+  if (!vendedor_id || !producto_id || isNaN(monto) || monto <= 0) {
+    feedback.textContent = '❌ Datos inválidos';
+    feedback.style.color = 'red';
+    return;
+  }
+
+  await supabase.from('ventas_comercio').insert({
+    comercio_id,
+    vendedor_id,
+    producto_id,
+    monto,
+    fecha_venta: new Date().toISOString()
+  });
+
+  feedback.textContent = '✅ Venta registrada';
+  feedback.style.color = 'green';
+  document.getElementById('montoVenta').value = '';
+  cargarVentas(); // si tenés tabla visual
+    }
+
+    async function cargarSelectoresVenta() {
+  const { data: vendedores } = await supabase
+    .from('vendedores')
+    .select('id, nombre')
+    .eq('comercio_id', comercio_id);
+
+  const { data: productos } = await supabase
+    .from('productos_comercio')
+    .select('id, nombre')
+    .eq('comercio_id', comercio_id)
+    .eq('activo', true);
+
+  const selectVendedor = document.getElementById('selectVendedor');
+  const selectProducto = document.getElementById('selectProducto');
+
+  selectVendedor.innerHTML = vendedores.map(v => `<option value="${v.id}">${v.nombre}</option>`).join('');
+  selectProducto.innerHTML = productos.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+    }
+
+    async function resumenPorVendedor() {
+  const { data: ventas } = await supabase
+    .from('ventas_comercio')
+    .select('vendedor_id, monto, vendedores(nombre)')
+    .eq('comercio_id', comercio_id);
+
+  const resumen = {};
+
+  ventas.forEach(v => {
+    const nombre = v.vendedores?.nombre || 'Sin nombre';
+    if (!resumen[nombre]) resumen[nombre] = 0;
+    resumen[nombre] += v.monto;
+  });
+
+  const contenedor = document.getElementById('resumenVendedor');
+  contenedor.innerHTML = Object.entries(resumen).map(([nombre, total]) => `
+    <tr><td>${nombre}</td><td>${total.toFixed(2)}</td></tr>
+  `).join('');
+    }
+
+    async function resumenPorProducto() {
+  const { data: ventas } = await supabase
+    .from('ventas_comercio')
+    .select('producto_id, monto, productos_comercio(nombre)')
+    .eq('comercio_id', comercio_id);
+
+  const resumen = {};
+
+  ventas.forEach(v => {
+    const nombre = v.productos_comercio?.nombre || 'Sin nombre';
+    if (!resumen[nombre]) resumen[nombre] = 0;
+    resumen[nombre] += v.monto;
+  });
+
+  const contenedor = document.getElementById('resumenProducto');
+  contenedor.innerHTML = Object.entries(resumen).map(([nombre, total]) => `
+    <tr><td>${nombre}</td><td>${total.toFixed(2)}</td></tr>
+  `).join('');
+    }
   </script>
 </body>
   </html>
