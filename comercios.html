@@ -34,12 +34,16 @@
         <th>RIF</th>
         <th>Estado</th>
         <th>Acciones</th>
+        <th>Correo</th>
       </tr>
     </thead>
     <tbody></tbody>
   </table>
 
   <script>
+    if (!localStorage.getItem("token")) {
+  window.location.href = "index.html";
+    }
     const supabase = supabase.createClient(
       'https://xhqhtzrcohovylcxibkf.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhocWh0enJjb2hvdnlsY3hpYmtmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4Njg3NTEsImV4cCI6MjA3MDQ0NDc1MX0.aTAOD-m3n2n6MAg1Cx2lDOPAD4jT2z4bcQXjxZwgllI'
@@ -62,6 +66,7 @@
           <td>${c.nombre}</td>
           <td>${c.rif}</td>
           <td>${c.estado}</td>
+          <td>${c.correo}</td>
           <td>
             <button onclick='editar(${JSON.stringify(c)})'>Editar</button>
             <button onclick='eliminar("${c.id}")'>Eliminar</button>
@@ -86,6 +91,9 @@
   const correo = document.getElementById('correo').value.trim();
 
   if (!nombre || !rif || !correo) return alert('Completa todos los campos');
+      if (!rif.match(/^J-\d{8}-\d$/)) return alert('❌ RIF inválido');
+if (!correo.includes('@')) return alert('❌ Correo inválido');
+      
 
   const { data: existentes } = await supabase.from('comercios').select('id').eq('rif', rif);
   if (!id && existentes.length > 0) return alert('❌ RIF duplicado');
