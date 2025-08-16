@@ -16,6 +16,22 @@
 
   <!-- Navegación principal -->
   <main class="p-6 space-y-6">
+    <!-- Resumen institucional -->
+<section id="resumen" class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+  <div class="bg-white p-4 rounded shadow">
+    <h3 class="text-blue-600 font-bold">🏪 Comercios activos</h3>
+    <p id="totalComercios" class="text-2xl font-semibold mt-2">...</p>
+  </div>
+  <div class="bg-white p-4 rounded shadow">
+    <h3 class="text-blue-600 font-bold">🎫 Licencias emitidas</h3>
+    <p id="totalLicencias" class="text-2xl font-semibold mt-2">...</p>
+  </div>
+  <div class="bg-white p-4 rounded shadow">
+    <h3 class="text-blue-600 font-bold">📅 Últimos eventos</h3>
+    <p id="totalEventos" class="text-2xl font-semibold mt-2">...</p>
+  </div>
+</section>
+    
     <section>
       <h2 class="text-lg font-semibold mb-2">Gestión institucional</h2>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -38,6 +54,35 @@
       </div>
     </section>
   </main>
+
+  <script type="module">
+  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+  const supabaseUrl = "https://TU_PROYECTO.supabase.co";
+  const supabaseKey = "TU_API_KEY";
+  const supabase = createClient(supabaseUrl, supabaseKey);
+
+  async function cargarResumen() {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      const [{ count: comercios }, { count: licencias }, { count: eventos }] = await Promise.all([
+        supabase.from("comercios").select("*", { count: "exact", head: true }),
+        supabase.from("licencias").select("*", { count: "exact", head: true }),
+        supabase.from("eventos").select("*", { count: "exact", head: true }),
+      ]);
+
+      document.getElementById("totalComercios").textContent = comercios ?? 0;
+      document.getElementById("totalLicencias").textContent = licencias ?? 0;
+      document.getElementById("totalEventos").textContent = eventos ?? 0;
+    } catch (error) {
+      console.error("Error al cargar resumen:", error);
+    }
+  }
+
+  cargarResumen();
+  </script>
 
   <!-- Script de cierre de sesión -->
   <script>
