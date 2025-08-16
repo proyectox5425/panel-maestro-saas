@@ -37,13 +37,7 @@
 <input type="number" id="precioProducto" placeholder="Precio">
 <button onclick="agregarProducto()">Agregar</button>
 <p id="feedbackProducto"></p>
-
-    <h3>📋 Catálogo de productos</h3>
-<table>
-  <thead><tr><th>Nombre</th><th>Precio</th><th>Estado</th></tr></thead>
-  <tbody id="tablaProductos"></tbody>
-</table>
-
+    
     <h3>📋 Catálogo de productos</h3>
 <table>
   <thead>
@@ -117,6 +111,18 @@
   <script>
     const supabase = supabase.createClient('TU_URL', 'TU_API_KEY');
     let comercio_id = null;
+    comercio_id = localStorage.getItem('comercio_id');
+if (comercio_id) {
+  document.getElementById('moduloCatalogo').style.display = 'block';
+  document.getElementById('moduloLicencias').style.display = 'block';
+  document.getElementById('moduloFinanciero').style.display = 'block';
+  document.getElementById('moduloVendedores').style.display = 'block';
+
+  cargarVendedores();
+  cargarPagos();
+  cargarCatalogo();
+  cargarLicencias();
+}
 
     async function loginComercio() {
       const correo = document.getElementById('correoLogin').value.trim();
@@ -137,6 +143,7 @@
       }
 
       comercio_id = data.comercio_id;
+      localStorage.setItem('comercio_id', comercio_id);
       feedback.textContent = '✅ Acceso concedido';
       feedback.style.color = 'green';
 
@@ -358,11 +365,28 @@ async function registrarVendedor() {
 
 async function asignarLicencia(vendedor_id) {
   const imei = prompt('IMEI a asignar:');
-  if (!imei) return;
+if (!imei) return;
 
-  await supabase.from('licencias')
-    .update({ vendedor_id })
-    .eq('imei', imei);
+// Validar existencia y disponibilidad
+const { data: licencia } = await supabase
+  .from('licencias')
+  .select('imei, vendedor_id')
+  .eq('imei', imei)
+  .single();
+
+if (!licencia) {
+  alert('❌ IMEI no encontrado');
+  return;
+}
+if (licencia.vendedor_id) {
+  alert('❌ IMEI ya asignado');
+  return;
+}
+
+// Asignar licencia
+await supabase.from('licencias')
+  .update({ vendedor_id })
+  .eq('imei', imei);
 
   await supabase.from('eventos_dispositivo').insert({
     imei,
@@ -410,10 +434,11 @@ async function asignarLicencia(vendedor_id) {
   const contenedor = document.getElementById('tablaProductos');
   contenedor.innerHTML = productos.map(p => `
     <tr>
-      <td>${p.nombre}</td>
-      <td>${p.precio}</td>
-      <td>${p.activo ? '🟢' : '🔴'}</td>
-    </tr>
+  <td>${p.nombre}</td>
+  <td>${p.precio}</td>
+  <td>${p.activo ? '🟢' : '🔴'}</td>
+  <td><button onclick="toggleProducto(${p.id}, ${p.activo})">${p.activo ? 'Desactivar' : 'Activar'}</button></td>
+</tr>
   `).join('');
     }
 
