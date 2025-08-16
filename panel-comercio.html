@@ -315,9 +315,9 @@ async function validarPago(imei) {
 
   for (const v of data) {
     const { data: licencias } = await supabase
-      .from('licencias')
-      .select('id')
-      .eq('vendedor_id', v.vendedor_id);
+  .from('licencias')
+  .select('id')
+  .eq('vendedor_id', v.id);
 
     const tr = document.createElement('tr');
     tr.innerHTML = `
