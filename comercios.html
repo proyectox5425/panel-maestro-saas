@@ -4,11 +4,44 @@
   <meta charset="UTF-8" />
   <title>Panel Maestro – Comercios</title>
   <style>
-    body { font-family: sans-serif; padding: 1rem; }
-    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-    th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: left; }
-    input, select, button { margin: 0.3rem; padding: 0.4rem; }
-    .form-block { margin-top: 1rem; }
+    body {
+      font-family: sans-serif;
+      padding: 1rem;
+      background: #f9f9f9;
+    }
+    h2 {
+      margin-bottom: 0.5rem;
+    }
+    .form-block {
+      background: #fff;
+      padding: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      margin-bottom: 1rem;
+    }
+    input, select, button {
+      display: block;
+      width: 100%;
+      margin: 0.5rem 0;
+      padding: 0.6rem;
+      font-size: 1rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 0.6rem;
+      text-align: left;
+    }
+    th {
+      background: #eee;
+    }
+    button[data-editar], button[data-eliminar] {
+      margin-right: 0.3rem;
+    }
   </style>
 </head>
 <body>
@@ -57,7 +90,7 @@
       const { data, error } = await supabase.from('comercios').select('*');
       const tbody = document.querySelector('#tabla_comercios tbody');
       tbody.innerHTML = '';
-      if (error) return;
+      if (error) return console.error(error);
       data.forEach(c => {
         const fila = document.createElement('tr');
         fila.innerHTML = `
@@ -98,22 +131,25 @@
       const { data: existentes } = await supabase.from('comercios').select('id').eq('rif', rif);
       if (!id && existentes.length > 0) return alert('❌ RIF duplicado');
 
-let comercio_id = id;
-if (id) {
-  const { error } = await supabase.from('comercios').update({ nombre, rif, correo, activo }).eq('id', id);
-  if (error) return alert('❌ Error al actualizar comercio');
-} else {
-  const { data, error } = await supabase.from('comercios').insert({ nombre, rif, correo, activo }).select();
-  if (error || !data || !data[0]) return alert('❌ Error al crear comercio');
-  comercio_id = data[0].id;
+      let comercio_id = id;
+      let claveGenerada = null;
 
-  const clave = Math.random().toString(36).slice(-8).toUpperCase();
-  await supabase.from('usuarios_comercios').insert({
-    comercio_id,
-    correo,
-    clave
-  });
-}
+      if (id) {
+        const { error } = await supabase.from('comercios').update({ nombre, rif, correo, activo }).eq('id', id);
+        if (error) return alert('❌ Error al actualizar comercio');
+      } else {
+        const { data, error } = await supabase.from('comercios').insert({ nombre, rif, correo, activo }).select();
+        if (error || !data || !data[0]) return alert('❌ Error al crear comercio');
+        comercio_id = data[0].id;
+
+        claveGenerada = Math.random().toString(36).slice(-8).toUpperCase();
+        const { error: errorUsuario } = await supabase.from('usuarios_comercios').insert({
+          comercio_id,
+          correo,
+          clave: claveGenerada
+        });
+        if (errorUsuario) return alert('❌ Error al crear usuario del comercio');
+      }
 
       await supabase.from('eventos').insert({
         tipo: id ? 'comercio_editado' : 'comercio_creado',
@@ -123,6 +159,8 @@ if (id) {
         creado_en: new Date().toISOString(),
         id_panel: 'comercios'
       });
+
+      alert(✅ Comercio ${id ? 'editado' : 'creado'}\nCorreo: ${correo}${claveGenerada ? `\nClave: ${claveGenerada} : ''}`);
 
       document.getElementById('comercio_id').value = '';
       document.getElementById('nombre').value = '';
