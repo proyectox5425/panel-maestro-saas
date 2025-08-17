@@ -27,9 +27,6 @@
       <option value="navegacion_limitada">Navegación limitada</option>
     </select>
 
-    <label for="imei">IMEI del dispositivo:</label>
-    <input type="text" id="imei" required maxlength="20" />
-
     <label for="selector_comercio">Comercio asignado:</label>
     <select id="selector_comercio" required>
       <option value="">Selecciona un comercio</option>
@@ -41,52 +38,7 @@
   <div id="feedbackLicenciaIndividual" class="feedback"></div>
 </section>
 
-<script>
-  function generarToken() {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    return Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-  }
-
-  document.getElementById('formLicenciaIndividual').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const tipo = document.getElementById('tipo').value;
-    const imei = document.getElementById('imei').value.trim();
-    const comercio_id = document.getElementById('selector_comercio').value;
-
-    const token = generarToken();
-    const link_instalacion = `https://tudominio.com/instalar?token=${token}`;
-
-    const { data, error } = await supabase
-      .from('licencias')
-      .insert([{
-        tipo,
-        imei,
-        comercio_id,
-        estado: 'activa',
-        fecha_creacion: new Date().toISOString(),
-        token,
-        link_instalacion
-      }]);
-
-    const feedback1 = document.getElementById('feedbackLicenciaIndividual');
-
-    if (error) {
-      feedback1.textContent = '❌ Error: ' + error.message;
-      feedback1.style.color = 'red';
-    } else {
-      feedback1.innerHTML = `
-        ✅ Licencia creada con ID: ${data[0].id}<br>
-        🔗 <a href="${link_instalacion}" target="_blank">${link_instalacion}</a><br>
-        📱 <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(link_instalacion)}" alt="QR de instalación" />
-      `;
-      feedback1.style.color = 'green';
-      e.target.reset();
-      cargarLicencias();
-    }
-  });
-</script>
-
-  <!-- 📦 Bloque 2: Generar lote de licencias -->
+<!-- 📦 Bloque 2: Generar lote de licencias -->
 <section id="crear-lote-licencias" class="modulo">
   <h2>Generar Lote de Licencias</h2>
   <form id="formLoteLicencias">
@@ -110,73 +62,35 @@
   <div id="feedbackLoteLicencias" class="feedback"></div>
 </section>
 
-<script>
-  function generarToken() {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    return Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-  }
+<!-- 📊 Bloque 3: Tabla de licencias -->
+<section id="tabla-licencias" class="modulo">
+  <h2>Licencias Existentes</h2>
+  <label for="filtroEstado">Filtrar por estado:</label>
+  <select id="filtroEstado">
+    <option value="todas">Todas</option>
+    <option value="disponible">Disponibles</option>
+    <option value="activa">Activas</option>
+    <option value="inactiva">Inactivas</option>
+    <option value="bloqueado">Bloqueadas</option>
+  </select>
+  <table id="tablaLicencias">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Tipo</th>
+        <th>IMEI</th>
+        <th>Comercio</th>
+        <th>Estado</th>
+        <th>Fecha</th>
+        <th>Token</th>
+        <th>Link</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</section>
 
-  document.getElementById('formLoteLicencias').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const cantidad = parseInt(document.getElementById('cantidad').value);
-    const tipo = document.getElementById('tipoLote').value;
-    const comercio_id = document.getElementById('selector_comercio_lote').value;
-
-    const lote = Array.from({ length: cantidad }, () => {
-      const token = generarToken();
-      const link_instalacion = `https://tudominio.com/instalar?token=${token}`;
-      return {
-        tipo,
-        imei: null,
-        comercio_id,
-        estado: 'activa',
-        fecha_creacion: new Date().toISOString(),
-        token,
-        link_instalacion
-      };
-    });
-
-    const { error } = await supabase.from('licencias').insert(lote);
-
-    const feedback2 = document.getElementById('feedbackLoteLicencias');
-
-    if (error) {
-      feedback2.textContent = '❌ Error: ' + error.message;
-      feedback2.style.color = 'red';
-    } else {
-      feedback2.innerHTML = `✅ Lote de ${cantidad} licencias creado con tokens únicos.<br>Ya puedes verlas en la tabla.`;
-      feedback2.style.color = 'green';
-      e.target.reset();
-      cargarLicencias();
-    }
-  });
-</script>
-
-  <!-- 📊 Bloque 3: Tabla de licencias -->
-  <section id="tabla-licencias" class="modulo">
-    <h2>Licencias Existentes</h2>
-    <label for="filtroEstado">Filtrar por estado:</label>
-<select id="filtroEstado">
-  <option value="todas">Todas</option>
-  <option value="activa">Activas</option>
-  <option value="inactiva">Inactivas</option>
-</select>
-    <table id="tablaLicencias">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Tipo</th>
-          <th>IMEI</th>
-          <th>Comercio</th>
-          <th>Estado</th>
-          <th>Fecha</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </section>
-
-  <!-- 🧭 Bloque: Dispositivos Instalados -->
+<!-- 🧭 Bloque: Dispositivos Instalados -->
 <section id="dispositivos-instalados" class="modulo">
   <h2>Dispositivos Instalados</h2>
   <table id="tablaInstalados">
@@ -194,7 +108,7 @@
   </table>
 </section>
 
-  <!-- 💳 Bloque: Control financiero -->
+<!-- 💳 Bloque: Control financiero -->
 <section id="control-financiero" class="modulo">
   <h2>Control Financiero</h2>
   <form id="formFinanciero">
@@ -214,176 +128,176 @@
   <div id="feedbackFinanciero" class="feedback"></div>
 </section>
 
-  <!-- 🔌 Script funcional -->
-  <script>
-    const supabase = supabase.createClient(
-      'https://xhqhtzrcohovylcxibkf.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhocWh0enJjb2hvdnlsY3hpYmtmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4Njg3NTEsImV4cCI6MjA3MDQ0NDc1MX0.aTAOD-m3n2n6MAg1Cx2lDOPAD4jT2z4bcQXjxZwgllI'
-    );
+<script>
+const supabase = supabase.createClient(
+  'https://xhqhtzrcohovylcxibkf.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhocWh0enJjb2hvdnlsY3hpYmtmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4Njg3NTEsImV4cCI6MjA3MDQ0NDc1MX0.aTAOD-m3n2n6MAg1Cx2lDOPAD4jT2z4bcQXjxZwgllI'
+);
 
-    const feedback1 = document.getElementById('feedbackLicenciaIndividual');
-    const feedback2 = document.getElementById('feedbackLoteLicencias');
-    const tablaBody = document.querySelector('#tablaLicencias tbody');
+function generarToken() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+}
 
-    async function cargarSelectorComercios() {
-      const { data, error } = await supabase.from('comercios').select('id, nombre').eq('estado', 'activo');
-      const selector1 = document.getElementById('selector_comercio');
-      const selector2 = document.getElementById('selector_comercio_lote');
-      selector1.innerHTML = '<option value="">Selecciona un comercio</option>';
-      selector2.innerHTML = '<option value="">Selecciona un comercio</option>';
+async function cargarSelectorComercios() {
+  const { data, error } = await supabase.from('comercios').select('id, nombre');
+  const selector1 = document.getElementById('selector_comercio');
+  const selector2 = document.getElementById('selector_comercio_lote');
+  selector1.innerHTML = '<option value="">Selecciona un comercio</option>';
+  selector2.innerHTML = '<option value="">Selecciona un comercio</option>';
+  if (error) return console.error('Error al cargar comercios:', error.message);
+  data.forEach(c => {
+    const opt1 = document.createElement('option');
+    opt1.value = c.id;
+    opt1.textContent = c.nombre;
+    selector1.appendChild(opt1);
+    const opt2 = document.createElement('option');
+    opt2.value = c.id;
+    opt2.textContent = c.nombre;
+    selector2.appendChild(opt2);
+  });
+}
 
-      if (error) return console.error('Error al cargar comercios:', error.message);
+document.getElementById('formLicenciaIndividual').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const tipo = document.getElementById('tipo').value;
+  const comercio_id = document.getElementById('selector_comercio').value;
+  const token = generarToken();
+  const link_instalacion = `https://tudominio.com/instalar?token=${token}`;
+  const { data, error } = await supabase.from('licencias').insert([{
+    tipo,
+    imei: null,
+    comercio_id,
+    estado: 'disponible',
+    fecha_creacion: new Date().toISOString(),
+    token,
+    link_instalacion
+  }]);
+  const feedback = document.getElementById('feedbackLicenciaIndividual');
+  if (error) {
+    feedback.textContent = '❌ Error: ' + error.message;
+    feedback.style.color = 'red';
+  } else {
+    await supabase.from('eventos_dispositivo').insert({
+      tipo_evento: 'licencia_generada',
+      licencia_id: data[0].id,
+      fecha: new Date().toISOString()
+    });
+    feedback.innerHTML = `
+      ✅ Licencia creada con ID: ${data[0].id}<br>
+      🔗 <a href="${link_instalacion}" target="_blank">${link_instalacion}</a><br>
+      📱 <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(link_instalacion)}" alt="QR de instalación" />
+    `;
+    feedback.style.color = 'green';
+    e.target.reset();
+    cargarLicencias();
+  }
+});
 
-      data.forEach(c => {
-        const option1 = document.createElement('option');
-        option1.value = c.id;
-        option1.textContent = c.nombre;
-        selector1.appendChild(option1);
-
-        const option2 = document.createElement('option');
-        option2.value = c.id;
-        option2.textContent = c.nombre;
-        selector2.appendChild(option2);
+document.getElementById('formLoteLicencias').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const cantidad = parseInt(document.getElementById('cantidad').value);
+  const tipo = document.getElementById('tipoLote').value;
+  const comercio_id = document.getElementById('selector_comercio_lote').value;
+  const lote = [];
+  for (let i = 0; i < cantidad; i++) {
+    const token = generarToken();
+    const link = `https://tudominio.com/instalar?token=${token}`;
+    lote.push({
+      tipo,
+      imei: null,
+      comercio_id,
+      estado: 'disponible',
+      fecha_creacion: new Date().toISOString(),
+      token,
+      link_instalacion: link
+    });
+  }
+  const { data, error } = await supabase.from('licencias').insert(lote);
+  const feedback = document.getElementById('feedbackLoteLicencias');
+  if (error) {
+    feedback.textContent = '❌ Error: ' + error.message;
+    feedback.style.color = 'red';
+  } else {
+    for (const lic of data) {
+      await supabase.from('eventos_dispositivo').insert({
+        tipo_evento: 'licencia_generada',
+        licencia_id: lic.id,
+        fecha: new Date().toISOString()
       });
     }
-
-    document.getElementById('formLicenciaIndividual').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const tipo = document.getElementById('tipo').value;
-      const imei = document.getElementById('imei').value.trim();
-      const comercio_id = document.getElementById('selector_comercio').value;
-
-      const { data, error } = await supabase
-        .from('licencias')
-        .insert([{ tipo, imei, comercio_id, estado: 'activa', fecha_creacion: new Date().toISOString() }]);
-
-      if (error) {
-        feedback1.textContent = '❌ Error: ' + error.message;
-        feedback1.style.color = 'red';
-      } else {
-        feedback1.textContent = '✅ Licencia creada con ID: ' + data[0].id;
-        feedback1.style.color = 'green';
-        e.target.reset();
-        cargarLicencias();
-      }
-    });
-
-    document.getElementById('formLoteLicencias').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const cantidad = parseInt(document.getElementById('cantidad').value);
-      const tipo = document.getElementById('tipoLote').value;
-      const comercio_id = document.getElementById('selector_comercio_lote').value;
-
-      const lote = Array.from({ length: cantidad }, () => ({
-        tipo, imei: null, comercio_id, estado: 'activa', fecha_creacion: new Date().toISOString()
-      }));
-
-      const { error } = await supabase.from('licencias').insert(lote);
-
-      if (error) {
-        feedback2.textContent = '❌ Error: ' + error.message;
-        feedback2.style.color = 'red';
-      } else {
-        feedback2.textContent = `✅ Lote de ${cantidad} licencias creado`;
-        feedback2.style.color = 'green';
-        e.target.reset();
-        cargarLicencias();
-      }
-    });
-
-    async function cargarLicencias() {
-  const estadoSeleccionado = document.getElementById('filtroEstado').value;
-  let query = supabase
-    .from('licencias')
-    .select('id, tipo, imei, estado, fecha_creacion, comercios(nombre)')
-    .order('fecha_creacion', { ascending: false })
-    .limit(100);
-
-  if (estadoSeleccionado !== 'todas') {
-    query = query.eq('estado', estadoSeleccionado);
+    feedback.textContent = `✅ Lote de ${cantidad} licencias creado`;
+    feedback.style.color = 'green';
+    e.target.reset();
+    cargarLicencias();
   }
+});
 
+async function cargarLicencias() {
+  const estado = document.getElementById('filtroEstado').value;
+  let query = supabase.from('licencias').select('id, tipo, imei, estado, fecha_creacion, token, link_instalacion, comercios(nombre)').order('fecha_creacion', { ascending: false }).limit(100);
+  if (estado !== 'todas') query = query.eq('estado', estado);
   const { data, error } = await query;
-
-  tablaBody.innerHTML = '';
+  const tbody = document.querySelector('#tablaLicencias tbody');
+  tbody.innerHTML = '';
   if (data) {
     data.forEach(lic => {
-      const row = document.createElement('tr');
-      row.innerHTML = `
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
         <td>${lic.id}</td>
         <td>${lic.tipo}</td>
         <td>${lic.imei || '-'}</td>
         <td>${lic.comercios?.nombre || '-'}</td>
         <td>${lic.estado}</td>
         <td>${new Date(lic.fecha_creacion).toLocaleString()}</td>
+        <td>${lic.token}</td>
+        <td><a href="${lic.link_instalacion}" target="_blank">Instalar</a></td>
       `;
-      tablaBody.appendChild(row);
+      tbody.appendChild(tr);
     });
   }
-        }
+}
 
-    cargarSelectorComercios();
-    cargarLicencias();
-    document.getElementById('filtroEstado').addEventListener('change', cargarLicencias);
+document.getElementById('filtroEstado').addEventListener('change', cargarLicencias);
 
-    async function cargarInstalados() {
+async function cargarInstalados() {
   const { data, error } = await supabase
     .from('licencias')
     .select('imei, token, tipo, estado, fecha_creacion, comercios(nombre)')
     .not('imei', 'is', null)
     .order('fecha_creacion', { ascending: false })
     .limit(100);
-
-  const tablaBody = document.querySelector('#tablaInstalados tbody');
-  tablaBody.innerHTML = '';
-
-  if (error) {
-    console.error('Error al cargar dispositivos instalados:', error.message);
-    return;
+  const tbody = document.querySelector('#tablaInstalados tbody');
+  tbody.innerHTML = '';
+  if (data) {
+    data.forEach(row => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${row.imei}</td>
+        <td>${row.token}</td>
+        <td>${row.tipo}</td>
+        <td>${row.comercios?.nombre || '-'}</td>
+        <td>${row.estado}</td>
+        <td>${new Date(row.fecha_creacion).toLocaleString()}</td>
+      `;
+      tbody.appendChild(tr);
+    });
   }
-
-  data.forEach(row => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${row.imei}</td>
-      <td>${row.token}</td>
-      <td>${row.tipo}</td>
-      <td>${row.comercios?.nombre || '-'}</td>
-      <td>${row.estado}</td>
-      <td>${new Date(row.fecha_creacion).toLocaleString()}</td>
-    `;
-    tablaBody.appendChild(tr);
-  });
 }
 
-// Ejecutar al cargar la página
-cargarInstalados();
-
-    document.getElementById('formFinanciero').addEventListener('submit', async (e) => {
+document.getElementById('formFinanciero').addEventListener('submit', async (e) => {
   e.preventDefault();
   const imei = document.getElementById('imeiFinanciero').value.trim();
   const accion = document.getElementById('accionFinanciera').value;
   const feedback = document.getElementById('feedbackFinanciero');
-
-  let nuevoEstado = accion === 'bloquear' ? 'bloqueado' : 'activa';
-
-  const { data: existe } = await supabase
-  .from('licencias')
-  .select('id')
-  .eq('imei', imei)
-  .single();
-
-if (!existe) {
-  feedback.textContent = '❌ IMEI no encontrado';
-  feedback.style.color = 'red';
-  return;
-}
-
-const { error } = await supabase
-  .from('licencias')
-  .update({ estado: nuevoEstado })
-  .eq('imei', imei);
-
+  const { data: licencia } = await supabase.from('licencias').select('id').eq('imei', imei).single();
+  if (!licencia) {
+    feedback.textContent = '❌ IMEI no encontrado';
+    feedback.style.color = 'red';
+    return;
+  }
+  let nuevoEstado = accion === 'bloquear' ? 'bloqueado' : accion === 'desbloquear' ? 'activa' : 'revocada';
+  const { error } = await supabase.from('licencias').update({ estado: nuevoEstado }).eq('imei', imei);
   if (error) {
     feedback.textContent = '❌ Error: ' + error.message;
     feedback.style.color = 'red';
@@ -393,16 +307,15 @@ const { error } = await supabase
       tipo_evento: accion,
       fecha: new Date().toISOString()
     });
-
-    feedback.textContent = `✅ Dispositivo ${accion === 'bloquear' ? 'bloqueado' : 'desbloqueado'} correctamente`;
+    feedback.textContent = `✅ Acción ejecutada: ${accion}`;
     feedback.style.color = 'green';
-    e.target.reset();
+e.target.reset();
     cargarLicencias();
     cargarInstalados();
   }
 });
 
-    async function verHistorial() {
+async function verHistorial() {
   const imei = document.getElementById('imeiHistorial').value.trim();
   const { data, error } = await supabase
     .from('eventos_dispositivo')
@@ -420,10 +333,16 @@ const { error } = await supabase
       tbody.appendChild(tr);
     });
   }
-    }
-  </script>
+}
 
-  <section id="historial-eventos" class="modulo">
+// Inicialización
+cargarSelectorComercios();
+cargarLicencias();
+cargarInstalados();
+</script>
+
+<!-- 📜 Historial de eventos -->
+<section id="historial-eventos" class="modulo">
   <h2>Historial de Eventos</h2>
   <input type="text" id="imeiHistorial" placeholder="IMEI a consultar" maxlength="20" />
   <button onclick="verHistorial()">Ver historial</button>
@@ -431,6 +350,7 @@ const { error } = await supabase
     <thead><tr><th>Fecha</th><th>Evento</th></tr></thead>
     <tbody id="tablaHistorial"></tbody>
   </table>
-  </section>
+</section>
+
 </body>
-  </html>
+</html>
