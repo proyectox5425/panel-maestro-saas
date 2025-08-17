@@ -21,6 +21,7 @@
     <input type="text" id="rif" placeholder="RIF (ej. J-12345678-9)" />
     <input type="email" id="correo" placeholder="Correo institucional del comercio" />
     <select id="estado">
+      <option value="">-- Estado --</option>
       <option value="activo">Activo</option>
       <option value="inactivo">Inactivo</option>
     </select>
@@ -92,7 +93,7 @@
       const estado = document.getElementById('estado').value;
       const correo = document.getElementById('correo').value.trim();
 
-      if (!nombre || !rif || !correo) return alert('Completa todos los campos');
+      if (!nombre || !rif || !correo || !estado) return alert('❌ Completa todos los campos');
       if (!rif.match(/^[JGVEP]-\d{8}-\d$/)) return alert('❌ RIF inválido');
       if (!correo.includes('@')) return alert('❌ Correo inválido');
 
@@ -101,10 +102,11 @@
 
       let comercio_id = id;
       if (id) {
-        await supabase.from('comercios').update({ nombre, rif, estado, correo }).eq('id', id);
+        const { error } = await supabase.from('comercios').update({ nombre, rif, estado, correo }).eq('id', id);
+        if (error) return alert('❌ Error al actualizar comercio');
       } else {
         const { data, error } = await supabase.from('comercios').insert({ nombre, rif, estado, correo }).select();
-        if (error) return alert('❌ Error al crear comercio');
+        if (error || !data || !data[0]) return alert('❌ Error al crear comercio');
         comercio_id = data[0].id;
 
         const clave = Math.random().toString(36).slice(-8).toUpperCase();
@@ -123,6 +125,7 @@
       document.getElementById('nombre').value = '';
       document.getElementById('rif').value = '';
       document.getElementById('correo').value = '';
+      document.getElementById('estado').value = '';
       cargarComercios();
     }
 
