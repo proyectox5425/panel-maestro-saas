@@ -98,25 +98,30 @@
       const { data: existentes } = await supabase.from('comercios').select('id').eq('rif', rif);
       if (!id && existentes.length > 0) return alert('❌ RIF duplicado');
 
-      let comercio_id = id;
-      if (id) {
-        const { error } = await supabase.from('comercios').update({ nombre, rif, correo, activo }).eq('id', id);
-        if (error) return alert('❌ Error al actualizar comercio');
-      } else {
-        const { data, error } = await supabase.from('comercios').insert({ nombre, rif, correo, activo }).select();
-        if (error || !data || !data[0]) return alert('❌ Error al crear comercio');
-        comercio_id = data[0].id;
+let comercio_id = id;
+if (id) {
+  const { error } = await supabase.from('comercios').update({ nombre, rif, correo, activo }).eq('id', id);
+  if (error) return alert('❌ Error al actualizar comercio');
+} else {
+  const { data, error } = await supabase.from('comercios').insert({ nombre, rif, correo, activo }).select();
+  if (error || !data || !data[0]) return alert('❌ Error al crear comercio');
+  comercio_id = data[0].id;
 
-        const clave = Math.random().toString(36).slice(-8).toUpperCase();
-        await supabase.from('usuarios_comercio').insert({ comercio_id, correo, clave });
-      }
+  const clave = Math.random().toString(36).slice(-8).toUpperCase();
+  await supabase.from('usuarios_comercios').insert({
+    comercio_id,
+    correo,
+    clave
+  });
+}
 
       await supabase.from('eventos').insert({
-        tipo_evento: id ? 'comercio_editado' : 'comercio_creado',
-        comercio_id,
+        tipo: id ? 'comercio_editado' : 'comercio_creado',
+        descripcion: Comercio ${id ? 'editado' : 'creado'}: ${nombre},
         usuario: usuarioMaestro,
-        panel: 'comercios',
-        fecha: new Date().toISOString()
+        origen: 'panel_maestro',
+        creado_en: new Date().toISOString(),
+        id_panel: 'comercios'
       });
 
       document.getElementById('comercio_id').value = '';
@@ -131,11 +136,12 @@
       if (confirm('¿Inhabilitar este comercio?')) {
         await supabase.from('comercios').update({ activo: false }).eq('id', id);
         await supabase.from('eventos').insert({
-          tipo_evento: 'comercio_inhabilitado',
-          comercio_id: id,
+          tipo: 'comercio_inhabilitado',
+          descripcion: Comercio inhabilitado: ${id},
           usuario: usuarioMaestro,
-          panel: 'comercios',
-          fecha: new Date().toISOString()
+          origen: 'panel_maestro',
+          creado_en: new Date().toISOString(),
+          id_panel: 'comercios'
         });
         cargarComercios();
       }
