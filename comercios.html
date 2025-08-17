@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <title>Panel Maestro – Comercios</title>
-  <script src="https://unpkg.com/@supabase/supabase-js"></script>
   <style>
     body { font-family: sans-serif; padding: 1rem; }
     table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
@@ -14,16 +13,18 @@
 </head>
 <body>
   <h2>🧩 Gestión de Comercios</h2>
+  <p>👤 Usuario maestro: <span id="usuarioActivo"></span></p>
+
   <div class="form-block">
     <input type="hidden" id="comercio_id" />
     <input type="text" id="nombre" placeholder="Nombre del comercio" />
-    <input type="text" id="rif" placeholder="RIF" />
+    <input type="text" id="rif" placeholder="RIF (ej. J-12345678-9)" />
     <input type="email" id="correo" placeholder="Correo institucional del comercio" />
     <select id="estado">
       <option value="activo">Activo</option>
       <option value="inactivo">Inactivo</option>
     </select>
-    <button onclick="guardarComercio()">Guardar</button>
+    <button id="guardarBtn">Guardar</button>
   </div>
 
   <table id="tabla_comercios">
@@ -33,21 +34,24 @@
         <th>Nombre</th>
         <th>RIF</th>
         <th>Estado</th>
-        <th>Acciones</th>
         <th>Correo</th>
+        <th>Acciones</th>
       </tr>
     </thead>
     <tbody></tbody>
   </table>
 
-  <script>
-    const supabase = supabase.createClient(
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+    const supabase = createClient(
       'https://xhqhtzrcohovylcxibkf.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhocWh0enJjb2hvdnlsY3hpYmtmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4Njg3NTEsImV4cCI6MjA3MDQ0NDc1MX0.aTAOD-m3n2n6MAg1Cx2lDOPAD4jT2z4bcQXjxZwgllI'
     );
-  </script>
 
-  <script>
+    const usuarioMaestro = localStorage.getItem("correo") ?? "maestro";
+    document.getElementById("usuarioActivo").textContent = usuarioMaestro;
+
     async function cargarComercios() {
       const { data, error } = await supabase.from('comercios').select('*');
       const tbody = document.querySelector('#tabla_comercios tbody');
@@ -65,8 +69,8 @@
           <td>${c.estado}</td>
           <td>${c.correo}</td>
           <td>
-            <button onclick='editar(${JSON.stringify(c)})'>Editar</button>
-            <button onclick='eliminar("${c.id}")'>Eliminar</button>
+            <button data-editar='${JSON.stringify(c)}'>Editar</button>
+            <button data-eliminar='${c.id}'>Eliminar</button>
           </td>
         `;
         tbody.appendChild(fila);
@@ -78,64 +82,72 @@
       document.getElementById('nombre').value = c.nombre;
       document.getElementById('rif').value = c.rif;
       document.getElementById('estado').value = c.estado;
+      document.getElementById('correo').value = c.correo;
     }
 
     async function guardarComercio() {
-  const id = document.getElementById('comercio_id').value;
-  const nombre = document.getElementById('nombre').value.trim();
-  const rif = document.getElementById('rif').value.trim();
-  const estado = document.getElementById('estado').value;
-  const correo = document.getElementById('correo').value.trim();
+      const id = document.getElementById('comercio_id').value;
+      const nombre = document.getElementById('nombre').value.trim();
+      const rif = document.getElementById('rif').value.trim();
+      const estado = document.getElementById('estado').value;
+      const correo = document.getElementById('correo').value.trim();
 
-  if (!nombre || !rif || !correo) return alert('Completa todos los campos');
-      if (!rif.match(/^J-\d{8}-\d$/)) return alert('❌ RIF inválido');
-if (!correo.includes('@')) return alert('❌ Correo inválido');
-      
+      if (!nombre || !rif || !correo) return alert('Completa todos los campos');
+      if (!rif.match(/^[JGVEP]-\d{8}-\d$/)) return alert('❌ RIF inválido');
+      if (!correo.includes('@')) return alert('❌ Correo inválido');
 
-  const { data: existentes } = await supabase.from('comercios').select('id').eq('rif', rif);
-  if (!id && existentes.length > 0) return alert('❌ RIF duplicado');
+      const { data: existentes } = await supabase.from('comercios').select('id').eq('rif', rif);
+      if (!id && existentes.length > 0) return alert('❌ RIF duplicado');
 
-  let comercio_id = id;
-  if (id) {
-    await supabase.from('comercios').update({ nombre, rif, estado, correo }).eq('id', id);
-  } else {
-    const { data, error } = await supabase.from('comercios').insert({ nombre, rif, estado, correo }).select();
-    if (error) return alert('❌ Error al crear comercio');
-    comercio_id = data[0].id;
+      let comercio_id = id;
+      if (id) {
+        await supabase.from('comercios').update({ nombre, rif, estado, correo }).eq('id', id);
+      } else {
+        const { data, error } = await supabase.from('comercios').insert({ nombre, rif, estado, correo }).select();
+        if (error) return alert('❌ Error al crear comercio');
+        comercio_id = data[0].id;
 
-    // Crear usuario institucional
-    const clave = Math.random().toString(36).slice(-8).toUpperCase();
-    await supabase.from('usuarios_comercio').insert({ comercio_id, correo, clave });
-  }
+        const clave = Math.random().toString(36).slice(-8).toUpperCase();
+        await supabase.from('usuarios_comercio').insert({ comercio_id, correo, clave });
+      }
 
-  await supabase.from('eventos').insert({
-    tipo_evento: id ? 'comercio_editado' : 'comercio_creado',
-    comercio_id,
-    usuario: 'maestro',
-    panel: 'comercios',
-    fecha: new Date().toISOString()
-  });
+      await supabase.from('eventos').insert({
+        tipo_evento: id ? 'comercio_editado' : 'comercio_creado',
+        comercio_id,
+        usuario: usuarioMaestro,
+        panel: 'comercios',
+        fecha: new Date().toISOString()
+      });
 
-  document.getElementById('comercio_id').value = '';
-  document.getElementById('nombre').value = '';
-  document.getElementById('rif').value = '';
-  document.getElementById('correo').value = '';
-  cargarComercios();
+      document.getElementById('comercio_id').value = '';
+      document.getElementById('nombre').value = '';
+      document.getElementById('rif').value = '';
+      document.getElementById('correo').value = '';
+      cargarComercios();
     }
 
     async function eliminar(id) {
-  if (confirm('¿Inhabilitar este comercio?')) {
-    await supabase.from('comercios').update({ estado: 'inactivo' }).eq('id', id);
-    await supabase.from('eventos').insert({
-      tipo_evento: 'comercio_inhabilitado',
-      comercio_id: id,
-      usuario: 'maestro',
-      panel: 'comercios',
-      fecha: new Date().toISOString()
+      if (confirm('¿Inhabilitar este comercio?')) {
+        await supabase.from('comercios').update({ estado: 'inactivo' }).eq('id', id);
+        await supabase.from('eventos').insert({
+          tipo_evento: 'comercio_inhabilitado',
+          comercio_id: id,
+          usuario: usuarioMaestro,
+          panel: 'comercios',
+          fecha: new Date().toISOString()
+        });
+        cargarComercios();
+      }
+    }
+
+    document.getElementById("guardarBtn").addEventListener("click", guardarComercio);
+
+    document.getElementById("tabla_comercios").addEventListener("click", (e) => {
+      if (e.target.dataset.editar) editar(JSON.parse(e.target.dataset.editar));
+      if (e.target.dataset.eliminar) eliminar(e.target.dataset.eliminar);
     });
+
     cargarComercios();
-  }
-  }
   </script>
 </body>
 </html>
