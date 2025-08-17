@@ -119,13 +119,13 @@
       }
 
       await supabase.from('eventos').insert({
-        tipo: id ? 'comercio_editado' : 'comercio_creado',
-        descripcion: Comercio ${id ? 'editado' : 'creado'}: ${nombre},
-        usuario: usuarioMaestro,
-        origen: 'panel_maestro',
-        creado_en: new Date().toISOString(),
-        id_panel: 'comercios'
-      });
+  tipo: id ? 'comercio_editado' : 'comercio_creado',
+  descripcion: Comercio ${id ? 'editado' : 'creado'}: ${nombre},
+  usuario: usuarioMaestro,
+  origen: 'panel_maestro',
+  creado_en: new Date().toISOString(),
+  id_panel: 'comercios'
+});
 
       alert("✅ Comercio " + (id ? "editado" : "creado") + "\nCorreo: " + correo + (claveGenerada ? "\nClave: " + claveGenerada : ""));
       document.getElementById('comercio_id').value = '';
