@@ -57,17 +57,14 @@
       const { data, error } = await supabase.from('comercios').select('*');
       const tbody = document.querySelector('#tabla_comercios tbody');
       tbody.innerHTML = '';
-      if (error) {
-        console.error('Error al cargar comercios:', error.message);
-        return;
-      }
+      if (error) return;
       data.forEach(c => {
         const fila = document.createElement('tr');
         fila.innerHTML = `
           <td>${c.id}</td>
           <td>${c.nombre}</td>
           <td>${c.rif}</td>
-          <td>${c.estado}</td>
+          <td>${c.activo ? 'Activo' : 'Inactivo'}</td>
           <td>${c.correo}</td>
           <td>
             <button data-editar='${JSON.stringify(c)}'>Editar</button>
@@ -82,7 +79,7 @@
       document.getElementById('comercio_id').value = c.id;
       document.getElementById('nombre').value = c.nombre;
       document.getElementById('rif').value = c.rif;
-      document.getElementById('estado').value = c.estado;
+      document.getElementById('estado').value = c.activo ? 'activo' : 'inactivo';
       document.getElementById('correo').value = c.correo;
     }
 
@@ -92,6 +89,7 @@
       const rif = document.getElementById('rif').value.trim();
       const estado = document.getElementById('estado').value;
       const correo = document.getElementById('correo').value.trim();
+      const activo = estado === 'activo';
 
       if (!nombre || !rif || !correo || !estado) return alert('❌ Completa todos los campos');
       if (!rif.match(/^[JGVEP]-\d{8}-\d$/)) return alert('❌ RIF inválido');
@@ -102,10 +100,10 @@
 
       let comercio_id = id;
       if (id) {
-        const { error } = await supabase.from('comercios').update({ nombre, rif, estado, correo }).eq('id', id);
+        const { error } = await supabase.from('comercios').update({ nombre, rif, correo, activo }).eq('id', id);
         if (error) return alert('❌ Error al actualizar comercio');
       } else {
-        const { data, error } = await supabase.from('comercios').insert({ nombre, rif, estado, correo }).select();
+        const { data, error } = await supabase.from('comercios').insert({ nombre, rif, correo, activo }).select();
         if (error || !data || !data[0]) return alert('❌ Error al crear comercio');
         comercio_id = data[0].id;
 
@@ -131,7 +129,7 @@
 
     async function eliminar(id) {
       if (confirm('¿Inhabilitar este comercio?')) {
-        await supabase.from('comercios').update({ estado: 'inactivo' }).eq('id', id);
+        await supabase.from('comercios').update({ activo: false }).eq('id', id);
         await supabase.from('eventos').insert({
           tipo_evento: 'comercio_inhabilitado',
           comercio_id: id,
