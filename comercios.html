@@ -141,7 +141,7 @@
         await supabase.from('comercios').update({ activo: false }).eq('id', id);
         await supabase.from('eventos').insert({
           tipo: 'comercio_inhabilitado',
-          descripcion: Comercio inhabilitado: ${id},
+          descripcion: 'Comercio inhabilitado: ${id}',
           usuario: usuarioMaestro,
           origen: 'panel_maestro',
           creado_en: new Date().toISOString(),
