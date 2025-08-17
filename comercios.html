@@ -120,7 +120,7 @@
 
       await supabase.from('eventos').insert({
   tipo: id ? 'comercio_editado' : 'comercio_creado',
-  descripcion: Comercio ${id ? 'editado' : 'creado'}: ${nombre},
+  descripcion: 'Comercio ${id ? 'editado' : 'creado'}: ${nombre}',
   usuario: usuarioMaestro,
   origen: 'panel_maestro',
   creado_en: new Date().toISOString(),
