@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gestión de Licencias</title>
-  <script src="https://unpkg.com/@supabase/supabase-js"></script>
   <style>
     body { font-family: sans-serif; padding: 20px; }
     .modulo { margin-bottom: 40px; }
@@ -128,11 +127,12 @@
   <div id="feedbackFinanciero" class="feedback"></div>
 </section>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.5/dist/umd/supabase.min.js"></script>
 <script>
-const supabase = supabase.createClient(
-  'https://xhqhtzrcohovylcxibkf.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhocWh0enJjb2hvdnlsY3hpYmtmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4Njg3NTEsImV4cCI6MjA3MDQ0NDc1MX0.aTAOD-m3n2n6MAg1Cx2lDOPAD4jT2z4bcQXjxZwgllI'
-);
+  const supabase = window.supabase.createClient(
+    'https://xhqhtzrcohovylcxibkf.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhocWh0enJjb2hvdnlsY3hpYmtmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4Njg3NTEsImV4cCI6MjA3MDQ0NDc1MX0.aTAOD-m3n2n6MAg1Cx2lDOPAD4jT2z4bcQXjxZwgllI'
+  );
 
 function generarToken() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
