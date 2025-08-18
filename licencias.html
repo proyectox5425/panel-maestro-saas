@@ -140,7 +140,7 @@ function generarToken() {
 }
 
 async function cargarSelectorComercios() {
-  const { data, error } = await supabase.from('comercios').select('id, nombre').eq('activo', true);
+  const { data, error } = await supabase.from('comercios').select('id, nombre').or('activo.is.null,activo.eq.true');
   const selector1 = document.getElementById('selector_comercio');
   const selector2 = document.getElementById('selector_comercio_lote');
   selector1.innerHTML = '<option value="">Selecciona un comercio</option>';
