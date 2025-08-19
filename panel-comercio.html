@@ -28,6 +28,9 @@
   <header>
     <h1>Panel Comercio</h1>
     <p id="comercioNombre">Cargando comercio...</p>
+<button onclick="cerrarSesion()" style="margin-top:1em; padding:0.5em 1em; background:#e74c3c; color:white; border:none; border-radius:4px; cursor:pointer;">
+  Cerrar sesión
+</button>
   </header>
 
   <nav>
@@ -116,6 +119,12 @@
     }
 
     cargarComercio()
+
+function cerrarSesion() {
+  localStorage.removeItem("comercio_id")
+  alert("Sesión cerrada. Redirigiendo al login...")
+  window.location.href = "login-comercio.html"
+}
   </script>
 </body>
 </html>
