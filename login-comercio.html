@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login Comercio</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <style>
     body { font-family: sans-serif; background: #ecf0f1; padding: 2em; }
     .card { background: white; padding: 2em; border-radius: 8px; max-width: 400px; margin: auto; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
@@ -21,14 +20,16 @@
     <p id="estado"></p>
   </div>
 
+  <!-- ✅ Carga de Supabase al final -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
   <script>
-  window.onload = () => {
     const supabase = supabase.createClient(
       'https://xhqhtzrcohovylcxibkf.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhocWh0enJjb2hvdnlsY3hpYmtmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4Njg3NTEsImV4cCI6MjA3MDQ0NDc1MX0.aTAOD-m3n2n6MAg1Cx2lDOPAD4jT2z4bcQXjxZwgllI'
     )
 
-    window.login = async () => {
+    async function login() {
       const correo = document.getElementById('correo').value.trim()
       const clave = document.getElementById('clave').value.trim()
       const estado = document.getElementById('estado')
@@ -53,7 +54,6 @@
         window.location.href = 'panel-comercio.html'
       }, 1000)
     }
-  }
-</script>
+  </script>
 </body>
 </html>
