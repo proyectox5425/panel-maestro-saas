@@ -5,10 +5,39 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login Comercio</title>
   <style>
-    body { font-family: sans-serif; background: #ecf0f1; padding: 2em; }
-    .card { background: white; padding: 2em; border-radius: 8px; max-width: 400px; margin: auto; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-    input, button { width: 100%; padding: 0.8em; margin-top: 1em; }
-    h2 { text-align: center; }
+    body {
+      font-family: sans-serif;
+      background: #f4f6f8;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .card {
+      background: white;
+      padding: 2em;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 400px;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 1em;
+    }
+    input, button {
+      width: 100%;
+      padding: 0.8em;
+      margin-top: 1em;
+      font-size: 1em;
+    }
+    #estado {
+      margin-top: 1em;
+      text-align: center;
+      font-weight: bold;
+    }
+    .error { color: #c0392b; }
+    .ok { color: #27ae60; }
   </style>
 </head>
 <body>
@@ -16,7 +45,7 @@
     <h2>Login Comercio</h2>
     <input type="email" id="correo" placeholder="Correo institucional" />
     <input type="password" id="clave" placeholder="Clave de acceso" />
-    <button onclick="login()">Ingresar</button>
+    <button id="btnLogin">Ingresar</button>
     <p id="estado"></p>
   </div>
 
@@ -24,36 +53,55 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
   <script>
-    const supabase = supabase.createClient(
-      'https://xhqhtzrcohovylcxibkf.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhocWh0enJjb2hvdnlsY3hpYmtmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4Njg3NTEsImV4cCI6MjA3MDQ0NDc1MX0.aTAOD-m3n2n6MAg1Cx2lDOPAD4jT2z4bcQXjxZwgllI'
-    )
+    document.addEventListener("DOMContentLoaded", () => {
+      const supabase = supabase.createClient(
+        'https://xhqhtzrcohovylcxibkf.supabase.co',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhocWh0enJjb2hvdnlsY3hpYmtmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4Njg3NTEsImV4cCI6MjA3MDQ0NDc1MX0.aTAOD-m3n2n6MAg1Cx2lDOPAD4jT2z4bcQXjxZwgllI'
+      )
 
-    async function login() {
-      const correo = document.getElementById('correo').value.trim()
-      const clave = document.getElementById('clave').value.trim()
+      const correoInput = document.getElementById('correo')
+      const claveInput = document.getElementById('clave')
       const estado = document.getElementById('estado')
+      const btnLogin = document.getElementById('btnLogin')
 
-      estado.textContent = 'Verificando...'
+      btnLogin.addEventListener('click', async () => {
+        const correo = correoInput.value.trim()
+        const clave = claveInput.value.trim()
 
-      const { data: comercio, error } = await supabase
-        .from('comercios')
-        .select('id, nombre')
-        .eq('correo', correo)
-        .eq('clave', clave)
-        .single()
+        // Validación básica
+        if (!correo || !clave) {
+          estado.textContent = 'Completa todos los campos.'
+          estado.className = 'error'
+          return
+        }
 
-      if (error || !comercio) {
-        estado.textContent = 'Acceso denegado. Verifica tus credenciales.'
-        return
-      }
+        estado.textContent = 'Verificando credenciales...'
+        estado.className = ''
 
-      localStorage.setItem('comercio_id', comercio.id)
-      estado.textContent = 'Acceso concedido. Redirigiendo...'
-      setTimeout(() => {
-        window.location.href = 'panel-comercio.html'
-      }, 1000)
-    }
+        const { data: comercio, error } = await supabase
+          .from('comercios')
+          .select('id, nombre')
+          .eq('correo', correo)
+          .eq('clave', clave)
+          .single()
+
+        if (error || !comercio) {
+          estado.textContent = 'Acceso denegado. Verifica tus datos.'
+          estado.className = 'error'
+          return
+        }
+
+        // Guardar ID en localStorage
+        localStorage.setItem('comercio_id', comercio.id)
+
+        estado.textContent = 'Acceso concedido. Redirigiendo...'
+        estado.className = 'ok'
+
+        setTimeout(() => {
+          window.location.href = 'panel-comercio.html'
+        }, 1200)
+      })
+    })
   </script>
 </body>
 </html>
