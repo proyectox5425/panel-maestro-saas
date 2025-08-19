@@ -229,15 +229,19 @@
   const loteId = loteData[0].id
 
   // Paso 2: generar las licencias vinculadas al lote
-  const licencias = Array.from({ length: cantidad }, () => ({
+  const licencias = Array.from({ length: cantidad }, () => {
+  const token = crypto.randomUUID().slice(0, 8)
+  return {
     tipo,
     comercio_id: comercioId,
-    token: crypto.randomUUID().slice(0, 8),
+    token,
     estado: 'disponible',
     creada_en: fecha,
     generado_por_panel: 'maestro',
-    lote_id: loteId
-  }))
+    lote_id: loteId,
+    link_instalacion: `https://panel.wioo.com/instalar?token=${token}`
+  }
+})
 
   const { error: errorLicencias } = await supabase
     .from('licencias')
