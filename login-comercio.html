@@ -54,7 +54,8 @@
 
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-      const supabase = supabase.createClient(
+      // Inicialización segura de Supabase
+      const supabase = window.supabase.createClient(
         'https://xhqhtzrcohovylcxibkf.supabase.co',
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhocWh0enJjb2hvdnlsY3hpYmtmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4Njg3NTEsImV4cCI6MjA3MDQ0NDc1MX0.aTAOD-m3n2n6MAg1Cx2lDOPAD4jT2z4bcQXjxZwgllI'
       )
@@ -78,28 +79,33 @@
         estado.textContent = 'Verificando credenciales...'
         estado.className = ''
 
-        const { data: comercio, error } = await supabase
-          .from('comercios')
-          .select('id, nombre')
-          .eq('correo', correo)
-          .eq('clave', clave)
-          .single()
+        try {
+          const { data: comercio, error } = await supabase
+            .from('comercios')
+            .select('id, nombre')
+            .eq('correo', correo)
+            .eq('clave', clave)
+            .single()
 
-        if (error || !comercio) {
-          estado.textContent = 'Acceso denegado. Verifica tus datos.'
+          if (error || !comercio) {
+            estado.textContent = 'Acceso denegado. Verifica tus datos.'
+            estado.className = 'error'
+            return
+          }
+
+          // Guardar ID en localStorage
+          localStorage.setItem('comercio_id', comercio.id)
+
+          estado.textContent = 'Acceso concedido. Redirigiendo...'
+          estado.className = 'ok'
+
+          setTimeout(() => {
+            window.location.href = 'panel-comercio.html'
+          }, 1200)
+        } catch (e) {
+          estado.textContent = 'Error de conexión. Intenta nuevamente.'
           estado.className = 'error'
-          return
         }
-
-        // Guardar ID en localStorage
-        localStorage.setItem('comercio_id', comercio.id)
-
-        estado.textContent = 'Acceso concedido. Redirigiendo...'
-        estado.className = 'ok'
-
-        setTimeout(() => {
-          window.location.href = 'panel-comercio.html'
-        }, 1200)
       })
     })
   </script>
