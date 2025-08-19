@@ -22,12 +22,13 @@
   </div>
 
   <script>
+  window.onload = () => {
     const supabase = supabase.createClient(
       'https://xhqhtzrcohovylcxibkf.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhocWh0enJjb2hvdnlsY3hpYmtmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4Njg3NTEsImV4cCI6MjA3MDQ0NDc1MX0.aTAOD-m3n2n6MAg1Cx2lDOPAD4jT2z4bcQXjxZwgllI'
     )
 
-    async function login() {
+    window.login = async () => {
       const correo = document.getElementById('correo').value.trim()
       const clave = document.getElementById('clave').value.trim()
       const estado = document.getElementById('estado')
@@ -52,6 +53,7 @@
         window.location.href = 'panel-comercio.html'
       }, 1000)
     }
-  </script>
+  }
+</script>
 </body>
 </html>
