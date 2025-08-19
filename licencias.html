@@ -51,6 +51,9 @@
         <option value="navegacion_limitada">Navegación limitada</option>
       </select>
 
+<label for="nombreLote">Nombre del lote:</label>
+<input type="text" id="nombreLote" required />
+
       <label for="selector_comercio_lote">Comercio asignado:</label>
       <select id="selector_comercio_lote" required>
         <option value="">Selecciona un comercio</option>
@@ -84,6 +87,7 @@
           <th>Fecha</th>
           <th>Token</th>
           <th>Link</th>
+          <th>Lote</th>
         </tr>
       </thead>
       <tbody></tbody>
@@ -181,28 +185,54 @@
   }
 
   async function crearLoteLicencias(event) {
-    event.preventDefault()
-    const cantidad = parseInt(document.getElementById('cantidad').value)
-    const tipo = document.getElementById('tipoLote').value
-    const comercioId = selectorComercioLote.value
+  event.preventDefault()
+  const cantidad = parseInt(document.getElementById('cantidad').value)
+  const tipo = document.getElementById('tipoLote').value
+  const comercioId = selectorComercioLote.value
+  const nombreLote = document.getElementById('nombreLote').value
+  const fecha = new Date().toISOString()
 
-    const lote = Array.from({ length: cantidad }, () => ({
-      tipo,
-      comercio_id: comercioId
-    }))
+  // Paso 1: crear el lote institucional
+  const { data: loteData, error: errorLote } = await supabase
+    .from('lotes')
+    .insert([{
+      nombre: nombreLote,
+      comercio_id: comercioId,
+      cantidad,
+      creado_en: fecha
+    }])
+    .select()
 
-    const { data, error } = await supabase
-      .from('licencias')
-      .insert(lote)
-      .select()
+  if (errorLote || !loteData?.[0]?.id) {
+    feedbackLoteLicencias.textContent = '❌ Error al crear lote: ' + errorLote.message
+    return
+  }
 
-    const feedback = document.getElementById('feedbackLoteLicencias')
-    if (error) {
-      feedback.textContent = 'Error al crear lote: ' + error.message
-    } else {
-      feedback.textContent = `Se crearon ${data.length} licencias`
-      cargarLicencias()
-    }
+  const loteId = loteData[0].id
+
+  // Paso 2: generar las licencias vinculadas al lote
+  const licencias = Array.from({ length: cantidad }, () => ({
+    tipo,
+    comercio_id: comercioId,
+    token: crypto.randomUUID().slice(0, 8),
+    estado: 'disponible',
+    creado_en: fecha,
+    generado_por_panel: 'maestro',
+    lote_id: loteId
+  }))
+
+  const { error: errorLicencias } = await supabase
+    .from('licencias')
+    .insert(licencias)
+
+  if (errorLicencias) {
+    feedbackLoteLicencias.textContent = '❌ Error al insertar licencias: ' + errorLicencias.message
+    return
+  }
+
+  feedbackLoteLicencias.textContent = `✅ Se creó el lote "${nombreLote}" y se insertaron ${cantidad} licencias`
+  cargarLicencias()
+}
   }
 
   async function cargarLicencias() {
@@ -230,7 +260,8 @@
         <td>${licencia.estado}</td>
         <td>${licencia.fecha || '—'}</td>
         <td>${licencia.token || '—'}</td>
-        <td>${licencia.token ? `<a href="https://panel.com/licencia/${licencia.token}" target="_blank">Ver</a>` : '—'}</td>
+        <td>${licencia.token ? `<a
+        <td>${licencia.lote_id || '—'}</td> href="https://panel.com/licencia/${licencia.token}" target="_blank">Ver</a>` : '—'}</td>
       `
       tablaLicencias.appendChild(fila)
     })
