@@ -16,42 +16,21 @@
   </style>
 </head>
 <body>
+
 <script>
-  const comercioId = localStorage.getItem("comercio_id")
-
-  if (!comercioId) {
-    alert("No has iniciado sesión. Redirigiendo al login...")
-    window.location.href = "login-comercio.html"
-  }
-</script>
-
-  <header>
-    <h1>Panel Comercio</h1>
-    <p id="comercioNombre">Cargando comercio...</p>
-<button onclick="cerrarSesion()" style="margin-top:1em; padding:0.5em 1em; background:#e74c3c; color:white; border:none; border-radius:4px; cursor:pointer;">
-  Cerrar sesión
-</button>
-  </header>
-
-  <nav>
-    <button onclick="mostrar('dashboard')">Dashboard</button>
-    <button onclick="mostrar('vendedores')">Vendedores</button>
-    <button onclick="mostrar('catalogo')">Catálogo</button>
-    <button onclick="mostrar('ventas')">Ventas</button>
-    <button onclick="mostrar('pagos')">Pagos</button>
-    <button onclick="mostrar('reportes')">Reportes</button>
-    <button onclick="mostrar('lotes')">Lotes</button>
-  </nav>
-
-  <section id="contenido">
-    <div class="card">Selecciona una opción del menú para comenzar.</div>
-  </section>
-
-  <script>
-    const supabase = supabase.createClient(
+  document.addEventListener("DOMContentLoaded", () => {
+    const supabase = window.supabase.createClient(
       'https://xhqhtzrcohovylcxibkf.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhocWh0enJjb2hvdnlsY3hpYmtmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4Njg3NTEsImV4cCI6MjA3MDQ0NDc1MX0.aTAOD-m3n2n6MAg1Cx2lDOPAD4jT2z4bcQXjxZwgllI'
     )
+
+    const comercioId = localStorage.getItem("comercio_id")
+
+    if (!comercioId) {
+      alert("No has iniciado sesión. Redirigiendo al login...")
+      window.location.href = "login-comercio.html"
+      return
+    }
 
     async function mostrar(vista) {
       const contenido = document.getElementById('contenido')
@@ -118,13 +97,37 @@
       document.getElementById('comercioNombre').textContent = comercio?.nombre ?? 'Comercio no encontrado'
     }
 
-    cargarComercio()
+    function cerrarSesion() {
+      localStorage.removeItem("comercio_id")
+      alert("Sesión cerrada. Redirigiendo al login...")
+      window.location.href = "login-comercio.html"
+    }
 
-function cerrarSesion() {
-  localStorage.removeItem("comercio_id")
-  alert("Sesión cerrada. Redirigiendo al login...")
-  window.location.href = "login-comercio.html"
-}
-  </script>
+    cargarComercio()
+  })
+</script>
+
+  <header>
+    <h1>Panel Comercio</h1>
+    <p id="comercioNombre">Cargando comercio...</p>
+    <button onclick="cerrarSesion()" style="margin-top:1em; padding:0.5em 1em; background:#e74c3c; color:white; border:none; border-radius:4px; cursor:pointer;">
+      Cerrar sesión
+    </button>
+  </header>
+
+  <nav>
+    <button onclick="mostrar('dashboard')">Dashboard</button>
+    <button onclick="mostrar('vendedores')">Vendedores</button>
+    <button onclick="mostrar('catalogo')">Catálogo</button>
+    <button onclick="mostrar('ventas')">Ventas</button>
+    <button onclick="mostrar('pagos')">Pagos</button>
+    <button onclick="mostrar('reportes')">Reportes</button>
+    <button onclick="mostrar('lotes')">Lotes</button>
+  </nav>
+
+  <section id="contenido">
+    <div class="card">Selecciona una opción del menú para comenzar.</div>
+  </section>
+
 </body>
 </html>
