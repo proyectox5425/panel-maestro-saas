@@ -80,21 +80,21 @@
         estado.className = ''
 
         try {
-          const { data: comercio, error } = await supabase
-            .from('comercios')
-            .select('id, nombre')
-            .eq('correo', correo)
-            .eq('clave', clave)
-            .single()
+          const { data: usuario, error } = await supabase
+  .from('usuarios_comercios')
+  .select('comercio_id')
+  .eq('correo', correo)
+  .eq('clave', clave)
+  .eq('activo', true)
+  .single()
 
-          if (error || !comercio) {
-            estado.textContent = 'Acceso denegado. Verifica tus datos.'
-            estado.className = 'error'
-            return
-          }
+          if (error || !usuario) {
+  estado.textContent = 'Acceso denegado. Verifica tus datos.'
+  estado.className = 'error'
+  return
+}
 
-          // Guardar ID en localStorage
-          localStorage.setItem('comercio_id', comercio.id)
+localStorage.setItem('comercio_id', usuario.comercio_id)
 
           estado.textContent = 'Acceso concedido. Redirigiendo...'
           estado.className = 'ok'
