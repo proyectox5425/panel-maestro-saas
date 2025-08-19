@@ -16,6 +16,15 @@
   </style>
 </head>
 <body>
+<script>
+  const comercioId = localStorage.getItem("comercio_id")
+
+  if (!comercioId) {
+    alert("No has iniciado sesión. Redirigiendo al login...")
+    window.location.href = "login-comercio.html"
+  }
+</script>
+
   <header>
     <h1>Panel Comercio</h1>
     <p id="comercioNombre">Cargando comercio...</p>
@@ -40,8 +49,6 @@
       'https://xhqhtzrcohovylcxibkf.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhocWh0enJjb2hvdnlsY3hpYmtmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4Njg3NTEsImV4cCI6MjA3MDQ0NDc1MX0.aTAOD-m3n2n6MAg1Cx2lDOPAD4jT2z4bcQXjxZwgllI'
     )
-
-    const comercioId = localStorage.getItem("comercio_id") ?? "REEMPLAZAR_CON_ID_REAL"
 
     async function mostrar(vista) {
       const contenido = document.getElementById('contenido')
