@@ -85,11 +85,28 @@
       }
 
       if (vista === 'lotes') {
-        const { data: lotes } = await supabase.from('lotes').select('*').eq('comercio_id', comercioId)
-        contenido.innerHTML = lotes.map(l =>
-          `<div class="card"><strong>Lote:</strong> ${l.id}<br>Total: ${l.cantidad_total}<br>Usadas: ${l.cantidad_usada}</div>`
+  const { data: lotes } = await supabase.from('lotes').select('*, licencias(*)').eq('comercio_id', comercioId)
+  contenido.innerHTML = lotes.map(l => {
+    const licenciasHTML = l.licencias?.length
+      ? l.licencias.map(lic =>
+          `<div style="margin-top:0.5em; padding:0.5em; background:#ecf0f1; border-radius:4px;">
+            <strong>Token:</strong> ${lic.token}<br>
+            <strong>Estado:</strong> ${lic.estado}<br>
+            ${lic.link_instalacion ? `<a href="${lic.link_instalacion}" target="_blank">Instalar</a>` : ''}
+          </div>`
         ).join('')
-      }
+      : '<em>Sin licencias registradas</em>'
+
+    return `
+      <div class="card">
+        <strong>Lote:</strong> ${l.id}<br>
+        Total: ${l.cantidad_total}<br>
+        Usadas: ${l.cantidad_usada}<br>
+        <div style="margin-top:1em;"><strong>Licencias:</strong><br>${licenciasHTML}</div>
+      </div>
+    `
+  }).join('')
+}
     }
 
     async function cargarComercio() {
