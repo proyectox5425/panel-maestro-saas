@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login Comercio</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <style>
+    body { font-family: sans-serif; background: #ecf0f1; padding: 2em; }
+    .card { background: white; padding: 2em; border-radius: 8px; max-width: 400px; margin: auto; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    input, button { width: 100%; padding: 0.8em; margin-top: 1em; }
+    h2 { text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Login Comercio</h2>
+    <input type="email" id="correo" placeholder="Correo institucional" />
+    <input type="password" id="clave" placeholder="Clave de acceso" />
+    <button onclick="login()">Ingresar</button>
+    <p id="estado"></p>
+  </div>
+
+  <script>
+    const supabase = supabase.createClient(
+      'https://xhqhtzrcohovylcxibkf.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhocWh0enJjb2hvdnlsY3hpYmtmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4Njg3NTEsImV4cCI6MjA3MDQ0NDc1MX0.aTAOD-m3n2n6MAg1Cx2lDOPAD4jT2z4bcQXjxZwgllI'
+    )
+
+    async function login() {
+      const correo = document.getElementById('correo').value.trim()
+      const clave = document.getElementById('clave').value.trim()
+      const estado = document.getElementById('estado')
+
+      estado.textContent = 'Verificando...'
+
+      const { data: comercio, error } = await supabase
+        .from('comercios')
+        .select('id, nombre')
+        .eq('correo', correo)
+        .eq('clave', clave)
+        .single()
+
+      if (error || !comercio) {
+        estado.textContent = 'Acceso denegado. Verifica tus credenciales.'
+        return
+      }
+
+      localStorage.setItem('comercio_id', comercio.id)
+      estado.textContent = 'Acceso concedido. Redirigiendo...'
+      setTimeout(() => {
+        window.location.href = 'panel-comercio.html'
+      }, 1000)
+    }
+  </script>
+</body>
+</html>
