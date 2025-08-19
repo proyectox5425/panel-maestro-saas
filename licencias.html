@@ -132,6 +132,24 @@
     <div id="feedbackFinanciero" class="feedback"></div>
   </section>
 
+<!-- 🧱 Bloque: Lotes Institucionales -->
+<section id="tabla-lotes" class="modulo">
+  <h2>Lotes Institucionales</h2>
+  <table id="tablaLotes">
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Comercio</th>
+        <th>Tipo</th>
+        <th>Cantidad</th>
+        <th>Fecha</th>
+        <th>ID</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</section>
+
 <script type="module">
   import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -293,6 +311,33 @@
     })
   }
 
+async function cargarLotes() {
+  const tablaLotes = document.getElementById('tablaLotes').querySelector('tbody')
+  const { data, error } = await supabase
+    .from('lotes')
+    .select('*')
+    .order('creado_en', { ascending: false })
+
+  if (error) return console.error('Error al cargar lotes:', error)
+
+  tablaLotes.innerHTML = ''
+  data.forEach(lote => {
+    const comercio = comercios.find(c => c.id === lote.comercio_id)
+    const nombreComercio = comercio ? comercio.nombre : '—'
+
+    const fila = document.createElement('tr')
+    fila.innerHTML = `
+      <td>${lote.nombre}</td>
+      <td>${nombreComercio}</td>
+      <td>${lote.tipo || '—'}</td>
+      <td>${lote.cantidad}</td>
+      <td>${lote.creado_en?.split('T')[0]}</td>
+      <td>${lote.id}</td>
+    `
+    tablaLotes.appendChild(fila)
+  })
+}
+
   async function ejecutarAccionFinanciera(event) {
     event.preventDefault()
     const imei = document.getElementById('imeiFinanciero').value
@@ -324,9 +369,10 @@
   filtroEstado.addEventListener('change', cargarLicencias)
 
   cargarComercios().then(() => {
-    cargarLicencias()
-    cargarInstalados()
-  })
+  cargarLicencias()
+  cargarInstalados()
+  cargarLotes()
+})
 </script>
 </body>
 </html>
