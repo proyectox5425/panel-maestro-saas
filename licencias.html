@@ -271,16 +271,16 @@
 
       const fila = document.createElement('tr')
       fila.innerHTML = `
-        <td>${licencia.id}</td>
-        <td>${licencia.tipo}</td>
-        <td>${licencia.imei || '—'}</td>
-        <td>${nombreComercio}</td>
-        <td>${licencia.estado}</td>
-        <td>${licencia.fecha || '—'}</td>
-        <td>${licencia.token || '—'}</td>
-        <td>${licencia.token ? `<a
-        <td>${licencia.lote_id || '—'}</td> href="https://panel.com/licencia/${licencia.token}" target="_blank">Ver</a>` : '—'}</td>
-      `
+  <td>${licencia.id}</td>
+  <td>${licencia.tipo}</td>
+  <td>${licencia.imei || '—'}</td>
+  <td>${nombreComercio}</td>
+  <td>${licencia.estado}</td>
+  <td>${licencia.fecha || '—'}</td>
+  <td>${licencia.token || '—'}</td>
+  <td>${licencia.token ? `<a href="https://panel.com/licencia/${licencia.token}" target="_blank">Ver</a>` : '—'}</td>
+  <td>${licencia.lote_id || '—'}</td>
+`
       tablaLicencias.appendChild(fila)
     })
   }
