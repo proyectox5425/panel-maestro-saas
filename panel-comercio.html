@@ -2,502 +2,113 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Panel del Comercio</title>
-  <script src="https://unpkg.com/@supabase/supabase-js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel Comercio</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <style>
-    body { font-family: sans-serif; padding: 1rem; }
-    .modulo { margin-bottom: 2rem; }
-    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-    th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: left; }
-    input, select, button { margin: 0.3rem; padding: 0.4rem; }
-    .feedback { margin-top: 0.5rem; font-weight: bold; }
+    body { font-family: sans-serif; margin: 0; padding: 0; background: #f4f4f4; }
+    header { background: #2c3e50; color: white; padding: 1em; text-align: center; }
+    nav { display: flex; justify-content: space-around; background: #34495e; color: white; }
+    nav button { background: none; border: none; color: white; padding: 1em; cursor: pointer; }
+    section { padding: 1em; }
+    .card { background: white; margin: 1em 0; padding: 1em; border-radius: 8px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
+    input, select, button { margin: 0.5em 0; padding: 0.5em; width: 100%; }
   </style>
 </head>
 <body>
-  <h2>📦 Panel del Comercio</h2>
+  <header>
+    <h1>Panel Comercio</h1>
+    <p id="comercioNombre">Cargando comercio...</p>
+  </header>
 
-  <!-- 🔐 Login -->
-  <section class="modulo">
-    <h3>Acceso institucional</h3>
-    <input type="email" id="correoLogin" placeholder="Correo del comercio" />
-    <input type="password" id="claveLogin" placeholder="Clave asignada" />
-    <button onclick="loginComercio()">Ingresar</button>
-    <div id="feedbackLogin" class="feedback"></div>
+  <nav>
+    <button onclick="mostrar('dashboard')">Dashboard</button>
+    <button onclick="mostrar('vendedores')">Vendedores</button>
+    <button onclick="mostrar('catalogo')">Catálogo</button>
+    <button onclick="mostrar('ventas')">Ventas</button>
+    <button onclick="mostrar('pagos')">Pagos</button>
+    <button onclick="mostrar('reportes')">Reportes</button>
+    <button onclick="mostrar('lotes')">Lotes</button>
+  </nav>
+
+  <section id="contenido">
+    <div class="card">Selecciona una opción del menú para comenzar.</div>
   </section>
 
-  <!-- 🧑‍💼 Módulo de vendedores -->
-  <section class="modulo" id="moduloVendedores" style="display:none;">
-    <h3>Gestión de Vendedores</h3>
-    <table>
-      <thead>
-        <tr><th>Correo</th><th>Nombre</th><th>Teléfono</th><th>Licencias</th><th>Acción</th></tr>
-      </thead>
-      <tbody id="tablaVendedores"></tbody>
-    </table>
+  <script>
+    const supabase = supabase.createClient(
+      'https://xhqhtzrcohovylcxibkf.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhocWh0enJjb2hvdnlsY3hpYmtmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4Njg3NTEsImV4cCI6MjA3MDQ0NDc1MX0.aTAOD-m3n2n6MAg1Cx2lDOPAD4jT2z4bcQXjxZwgllI'
+    )
 
-    <h4>Registrar nuevo vendedor</h4>
-    <input type="email" id="correoVendedor" placeholder="Correo institucional" />
-    <input type="text" id="nombreVendedor" placeholder="Nombre completo" />
-    <input type="tel" id="telefonoVendedor" placeholder="Teléfono" />
-    <input type="password" id="claveVendedor" placeholder="Clave temporal" />
-    <button onclick="registrarVendedor()">Registrar</button>
-    <div id="feedbackVendedor" class="feedback"></div>
-  </section>
+    const comercioId = localStorage.getItem("comercio_id") ?? "REEMPLAZAR_CON_ID_REAL"
 
-  <!-- 📦 Módulo de productos -->
-  <section class="modulo" id="moduloCatalogo" style="display:none;">
-    <h3>Catálogo de Productos</h3>
-    <table>
-      <thead>
-        <tr><th>Marca</th><th>Modelo</th><th>Precio</th><th>Condiciones</th><th>Foto</th></tr>
-      </thead>
-      <tbody id="tablaCatalogo"></tbody>
-    </table>
+    async function mostrar(vista) {
+      const contenido = document.getElementById('contenido')
+      contenido.innerHTML = '<div class="card">Cargando...</div>'
 
-    <h4>Agregar producto</h4>
-    <input type="text" id="marcaProducto" placeholder="Marca" />
-    <input type="text" id="modeloProducto" placeholder="Modelo" />
-    <input type="number" id="precioProducto" placeholder="Precio en USD" />
-    <input type="text" id="condicionesProducto" placeholder="Condiciones (cuotas, inicial, plazo)" />
-    <input type="url" id="fotoProducto" placeholder="URL de la foto" />
-    <button onclick="agregarProducto()">Agregar</button>
-    <div id="feedbackProducto" class="feedback"></div>
-  </section>
+      if (vista === 'dashboard') {
+        const { data: ventas } = await supabase.from('ventas').select('*').eq('comercio_id', comercioId)
+        const { data: lotes } = await supabase.from('lotes').select('*').eq('comercio_id', comercioId)
+        const disponibles = lotes.reduce((acc, l) => acc + (l.cantidad_total - l.cantidad_usada), 0)
+        contenido.innerHTML = `
+          <div class="card"><h3>Ventas Totales: ${ventas.length}</h3></div>
+          <div class="card"><h3>Licencias Disponibles: ${disponibles}</h3></div>
+        `
+      }
 
-<!-- 💳 Módulo de ventas -->
-  <section class="modulo" id="moduloVentas" style="display:none;">
-    <h3>Registrar Venta</h3>
-    <input type="text" id="imeiVenta" placeholder="IMEI del dispositivo" />
-    <input type="email" id="correoClienteVenta" placeholder="Correo del cliente" />
-    <select id="productoVenta"></select>
-    <select id="vendedorVenta"></select>
-    <button onclick="registrarVenta()">Registrar Venta</button>
-    <div id="feedbackVenta" class="feedback"></div>
-  </section>
+      if (vista === 'vendedores') {
+        const { data: vendedores } = await supabase.from('vendedores').select('*').eq('comercio_id', comercioId)
+        contenido.innerHTML = vendedores.map(v =>
+          `<div class="card"><strong>${v.nombre}</strong><br>${v.correo} | ${v.telefono}</div>`
+        ).join('')
+      }
 
-  <!-- 🧾 Módulo de licencias -->
-  <section class="modulo" id="moduloLicencias" style="display:none;">
-    <h3>Asignar Licencia</h3>
-    <input type="text" id="imeiLicencia" placeholder="IMEI del dispositivo" />
-    <select id="tipoLicencia">
-      <option value="temporal">Temporal</option>
-      <option value="permanente">Permanente</option>
-    </select>
-    <input type="date" id="fechaInicioLicencia" />
-    <input type="date" id="fechaFinLicencia" />
-    <button onclick="asignarLicencia()">Asignar</button>
-    <div id="feedbackLicencia" class="feedback"></div>
-  </section>
+      if (vista === 'catalogo') {
+        const { data: catalogo } = await supabase.from('catalogo').select('*').eq('comercio_id', comercioId)
+        contenido.innerHTML = catalogo.map(d =>
+          `<div class="card"><strong>${d.marca} ${d.modelo}</strong><br>Precio: $${d.precio}<br>Cuotas: ${d.cuotas}</div>`
+        ).join('')
+      }
 
-  <!-- 💰 Módulo de pagos -->
-  <section class="modulo" id="moduloPagos" style="display:none;">
-    <h3>Registrar Pago</h3>
-    <input type="text" id="imeiPago" placeholder="IMEI del dispositivo" />
-    <input type="number" id="montoPago" placeholder="Monto en USD" />
-    <input type="date" id="fechaPago" />
-    <select id="vendedorPago"></select>
-    <button onclick="registrarPago()">Registrar</button>
-    <div id="feedbackPago" class="feedback"></div>
-  </section>
+      if (vista === 'ventas') {
+        const { data: ventas } = await supabase.from('ventas').select('*').eq('comercio_id', comercioId)
+        contenido.innerHTML = ventas.map(v =>
+          `<div class="card"><strong>IMEI:</strong> ${v.imei}<br>Cliente: ${v.cliente}<br>Estado: ${v.estado}</div>`
+        ).join('')
+      }
 
-  <!-- 📊 Módulo de eventos -->
-  <section class="modulo" id="moduloEventos" style="display:none;">
-    <h3>Eventos del Dispositivo</h3>
-    <input type="text" id="imeiEventos" placeholder="IMEI para consultar eventos" />
-    <button onclick="consultarEventos()">Consultar</button>
-    <table>
-      <thead>
-        <tr><th>Evento</th><th>Fecha</th><th>Vendedor</th><th>Cliente</th></tr>
-      </thead>
-      <tbody id="tablaEventos"></tbody>
-    </table>
-  </section>
+      if (vista === 'pagos') {
+        const { data: pagos } = await supabase.from('pagos').select('*').eq('comercio_id', comercioId)
+        contenido.innerHTML = pagos.map(p =>
+          `<div class="card"><strong>IMEI:</strong> ${p.imei}<br>Monto: $${p.monto}<br>Estado: ${p.estado}</div>`
+        ).join('')
+      }
 
-<script>
-  const supabase = supabase.createClient(
-    "https://xhqhtzrcohovylcxibkf.supabase.co",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhocWh0enJjb2hvdnlsY3hpYmtmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4Njg3NTEsImV4cCI6MjA3MDQ0NDc1MX0.aTAOD-m3n2n6MAg1Cx2lDOPAD4jT2z4bcQXjxZwgllI"
-  );
+      if (vista === 'reportes') {
+        const { data: ventas } = await supabase.from('ventas').select('*').eq('comercio_id', comercioId)
+        const activos = ventas.filter(v => v.estado === 'activo').length
+        const bloqueados = ventas.filter(v => v.estado === 'bloqueado').length
+        contenido.innerHTML = `
+          <div class="card"><h3>Dispositivos Activos: ${activos}</h3></div>
+          <div class="card"><h3>Dispositivos Bloqueados: ${bloqueados}</h3></div>
+        `
+      }
 
-  let comercioActivo = null;
-
-  async function loginComercio() {
-    const correo = document.getElementById("correoLogin").value.trim();
-    const clave = document.getElementById("claveLogin").value.trim();
-    const { data, error } = await supabase
-      .from("usuarios_comercios")
-      .select("*")
-      .eq("correo", correo)
-      .eq("clave", clave)
-      .single();
-
-    if (error || !data) {
-      document.getElementById("feedbackLogin").innerText = "Acceso denegado";
-      return;
+      if (vista === 'lotes') {
+        const { data: lotes } = await supabase.from('lotes').select('*').eq('comercio_id', comercioId)
+        contenido.innerHTML = lotes.map(l =>
+          `<div class="card"><strong>Lote:</strong> ${l.id}<br>Total: ${l.cantidad_total}<br>Usadas: ${l.cantidad_usada}</div>`
+        ).join('')
+      }
     }
 
-    comercioActivo = data;
-    document.getElementById("feedbackLogin").innerText = "✅ Acceso concedido";
-    document.getElementById("moduloVendedores").style.display = "block";
-    document.getElementById("moduloCatalogo").style.display = "block";
-    document.getElementById("moduloVentas").style.display = "block";
-    document.getElementById("moduloLicencias").style.display = "block";
-    document.getElementById("moduloPagos").style.display = "block";
-    document.getElementById("moduloEventos").style.display = "block";
-    cargarVendedores();
-    cargarProductos();
-  }
-
-  async function cargarVendedores() {
-    const { data } = await supabase
-      .from("vendedores")
-      .select("*")
-      .eq("comercio_id", comercioActivo.id);
-
-    const tabla = document.getElementById("tablaVendedores");
-    const selectVenta = document.getElementById("vendedorVenta");
-    const selectPago = document.getElementById("vendedorPago");
-    tabla.innerHTML = "";
-    selectVenta.innerHTML = "";
-    selectPago.innerHTML = "";
-
-    data.forEach(v => {
-      tabla.innerHTML += `<tr>
-        <td>${v.correo}</td><td>${v.nombre}</td><td>${v.telefono}</td>
-        <td>${v.licencias_asignadas || 0}</td>
-        <td><button onclick="revocarVendedor('${v.id}')">Revocar</button></td>
-      </tr>`;
-      selectVenta.innerHTML += `<option value="${v.id}">${v.nombre}</option>`;
-      selectPago.innerHTML += `<option value="${v.id}">${v.nombre}</option>`;
-    });
-  }
-
-  async function registrarVendedor() {
-    const correo = document.getElementById("correoVendedor").value.trim();
-    const nombre = document.getElementById("nombreVendedor").value.trim();
-    const telefono = document.getElementById("telefonoVendedor").value.trim();
-    const clave = document.getElementById("claveVendedor").value.trim();
-
-    const { error } = await supabase.from("vendedores").insert([{
-      comercio_id: comercioActivo.id,
-      correo, nombre, telefono, clave
-    }]);
-
-    document.getElementById("feedbackVendedor").innerText = error
-      ? "❌ Error al registrar"
-      : "✅ Vendedor registrado";
-    cargarVendedores();
-  }
-
-  async function revocarVendedor(id) {
-    await supabase.from("vendedores").delete().eq("id", id);
-    cargarVendedores();
-  }
-
-  async function cargarProductos() {
-    const { data } = await supabase
-      .from("productos")
-      .select("*")
-      .eq("comercio_id", comercioActivo.id);
-
-    const tabla = document.getElementById("tablaCatalogo");
-    const select = document.getElementById("productoVenta");
-    tabla.innerHTML = "";
-    select.innerHTML = "";
-
-    data.forEach(p => {
-      tabla.innerHTML += `<tr>
-        <td>${p.marca}</td><td>${p.modelo}</td><td>${p.precio}</td>
-        <td>${p.condiciones}</td><td><img src="${p.foto}" width="60"/></td>
-      </tr>`;
-      select.innerHTML += `<option value="${p.id}">${p.marca} ${p.modelo}</option>`;
-    });
-  }
-
-  async function agregarProducto() {
-    const marca = document.getElementById("marcaProducto").value.trim();
-    const modelo = document.getElementById("modeloProducto").value.trim();
-    const precio = parseFloat(document.getElementById("precioProducto").value);
-    const condiciones = document.getElementById("condicionesProducto").value.trim();
-    const foto = document.getElementById("fotoProducto").value.trim();
-
-    const { error } = await supabase.from("productos").insert([{
-      comercio_id: comercioActivo.id,
-      marca, modelo, precio, condiciones, foto
-    }]);
-
-    document.getElementById("feedbackProducto").innerText = error
-      ? "❌ Error al agregar"
-      : "✅ Producto agregado";
-    cargarProductos();
-  }
-</script>
-
-<script>
-  async function registrarVenta() {
-    const imei = document.getElementById("imeiVenta").value.trim();
-    const correoCliente = document.getElementById("correoClienteVenta").value.trim();
-    const producto_id = document.getElementById("productoVenta").value;
-    const vendedor_id = document.getElementById("vendedorVenta").value;
-
-    if (!imei || !correoCliente || !producto_id || !vendedor_id) {
-      document.getElementById("feedbackVenta").innerText = "❌ Datos incompletos";
-      return;
+    async function cargarComercio() {
+      const { data: comercio } = await supabase.from('comercios').select('*').eq('id', comercioId).single()
+      document.getElementById('comercioNombre').textContent = comercio?.nombre ?? 'Comercio no encontrado'
     }
 
-    const { data: existente } = await supabase
-      .from("ventas")
-      .select("id")
-      .eq("imei", imei)
-      .single();
-
-    if (existente) {
-      document.getElementById("feedbackVenta").innerText = "❌ IMEI ya registrado";
-      return;
-    }
-
-    const { error } = await supabase.from("ventas").insert([{
-      comercio_id: comercioActivo.comercio_id,
-      vendedor_id,
-      producto_id,
-      imei,
-      correo_cliente: correoCliente,
-      fecha_venta: new Date().toISOString()
-    }]);
-
-    await supabase.from("eventos_dispositivo").insert({
-      imei,
-      tipo_evento: "venta_registrada",
-      vendedor_id,
-      usuario: comercioActivo.correo,
-      fecha: new Date().toISOString()
-    });
-
-    document.getElementById("feedbackVenta").innerText = error
-      ? "❌ Error al registrar venta"
-      : "✅ Venta registrada";
-  }
-
-  async function asignarLicencia() {
-    const imei = document.getElementById("imeiLicencia").value.trim();
-    const tipo = document.getElementById("tipoLicencia").value;
-    const inicio = document.getElementById("fechaInicioLicencia").value;
-    const fin = document.getElementById("fechaFinLicencia").value;
-
-    if (!imei || !tipo || !inicio || !fin) {
-      document.getElementById("feedbackLicencia").innerText = "❌ Datos incompletos";
-      return;
-    }
-
-    const { error } = await supabase.from("licencias").insert([{
-      comercio_id: comercioActivo.comercio_id,
-      imei,
-      tipo,
-      fecha_inicio: inicio,
-      fecha_fin: fin,
-      estado: "activa"
-    }]);
-
-    await supabase.from("eventos_dispositivo").insert({
-      imei,
-      tipo_evento: "licencia_asignada",
-      usuario: comercioActivo.correo,
-      fecha: new Date().toISOString()
-    });
-
-    document.getElementById("feedbackLicencia").innerText = error
-      ? "❌ Error al asignar licencia"
-      : "✅ Licencia asignada";
-  }
-
-  async function registrarPago() {
-    const imei = document.getElementById("imeiPago").value.trim();
-    const monto = parseFloat(document.getElementById("montoPago").value);
-    const fecha = document.getElementById("fechaPago").value;
-    const vendedor_id = document.getElementById("vendedorPago").value;
-
-    if (!imei || isNaN(monto) || !fecha || !vendedor_id) {
-      document.getElementById("feedbackPago").innerText = "❌ Datos incompletos";
-      return;
-    }
-
-    const { error } = await supabase.from("pagos").insert([{
-      comercio_id: comercioActivo.comercio_id,
-      vendedor_id,
-      imei,
-      monto,
-      fecha_pago: fecha
-    }]);
-
-    await supabase.from("eventos_dispositivo").insert({
-      imei,
-      tipo_evento: "pago_registrado",
-      vendedor_id,
-      usuario: comercioActivo.correo,
-      fecha: new Date().toISOString()
-    });
-
-    document.getElementById("feedbackPago").innerText = error
-      ? "❌ Error al registrar pago"
-      : "✅ Pago registrado";
-  }
-
-  async function consultarEventos() {
-    const imei = document.getElementById("imeiEventos").value.trim();
-    const tabla = document.getElementById("tablaEventos");
-    tabla.innerHTML = "";
-
-    const { data, error } = await supabase
-      .from("eventos_dispositivo")
-      .select("*")
-      .eq("imei", imei)
-      .order("fecha", { ascending: false });
-
-    if (error || !data.length) {
-      tabla.innerHTML = `<tr><td colspan="4">Sin eventos registrados</td></tr>`;
-      return;
-    }
-
-    data.forEach(ev => {
-      tabla.innerHTML += `<tr>
-        <td>${ev.tipo_evento}</td>
-        <td>${new Date(ev.fecha).toLocaleString()}</td>
-        <td>${ev.vendedor_id || "-"}</td>
-        <td>${ev.usuario}</td>
-      </tr>`;
-    });
-  }
-</script>
-
-<script>
-  async function buscarPorCorreo() {
-    const correo = document.getElementById("correoBusqueda").value.trim();
-    const tabla = document.getElementById("tablaBusqueda");
-    tabla.innerHTML = "";
-
-    if (!correo) {
-      tabla.innerHTML = `<tr><td colspan="4">❌ Ingresa un correo</td></tr>`;
-      return;
-    }
-
-    const { data: ventas } = await supabase
-      .from("ventas")
-      .select("imei, producto_id, fecha_venta")
-      .eq("correo_cliente", correo);
-
-    if (!ventas || ventas.length === 0) {
-      tabla.innerHTML = `<tr><td colspan="4">Sin registros para este correo</td></tr>`;
-      return;
-    }
-
-    for (const venta of ventas) {
-      const { data: licencias } = await supabase
-        .from("licencias")
-        .select("tipo, fecha_inicio, fecha_fin, estado")
-        .eq("imei", venta.imei);
-
-      const licencia = licencias?.[0] || {};
-      tabla.innerHTML += `<tr>
-        <td>${venta.imei}</td>
-        <td>${venta.producto_id}</td>
-        <td>${new Date(venta.fecha_venta).toLocaleDateString()}</td>
-        <td>${licencia.tipo || "-"}</td>
-        <td>${licencia.estado || "-"}</td>
-        <td>${licencia.fecha_inicio ? new Date(licencia.fecha_inicio).toLocaleDateString() : "-"}</td>
-        <td>${licencia.fecha_fin ? new Date(licencia.fecha_fin).toLocaleDateString() : "-"}</td>
-      </tr>`;
-    }
-  }
-
-  async function exportarCSV() {
-    const { data, error } = await supabase
-      .from("ventas")
-      .select("imei, correo_cliente, producto_id, fecha_venta");
-
-    if (error || !data.length) {
-      alert("❌ No hay datos para exportar");
-      return;
-    }
-
-    let csv = "IMEI,Correo,Producto,Fecha\n";
-    data.forEach(row => {
-      csv += `${row.imei},${row.correo_cliente},${row.producto_id},${new Date(row.fecha_venta).toLocaleDateString()}\n`;
-    });
-
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", "ventas_comercio.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
-
-  function cerrarSesion() {
-    localStorage.removeItem("comercioActivo");
-    window.location.href = "login-comercio.html";
-  }
-</script>
-
-<body>
-  <h2>Panel de Comercio</h2>
-  <button onclick="cerrarSesion()">🔒 Cerrar sesión</button>
-
-  <section>
-    <h3>📦 Registrar Venta</h3>
-    <input id="imeiVenta" placeholder="IMEI del dispositivo" />
-    <input id="correoClienteVenta" placeholder="Correo del cliente" />
-    <select id="productoVenta"></select>
-    <select id="vendedorVenta"></select>
-    <button onclick="registrarVenta()">Registrar</button>
-    <p id="feedbackVenta"></p>
-  </section>
-
-  <section>
-    <h3>🎫 Asignar Licencia</h3>
-    <input id="imeiLicencia" placeholder="IMEI del dispositivo" />
-    <select id="tipoLicencia">
-      <option value="mensual">Mensual</option>
-      <option value="anual">Anual</option>
-    </select>
-    <input id="fechaInicioLicencia" type="date" />
-    <input id="fechaFinLicencia" type="date" />
-    <button onclick="asignarLicencia()">Asignar</button>
-    <p id="feedbackLicencia"></p>
-  </section>
-
-  <section>
-    <h3>💰 Registrar Pago</h3>
-    <input id="imeiPago" placeholder="IMEI del dispositivo" />
-    <input id="montoPago" type="number" placeholder="Monto" />
-    <input id="fechaPago" type="date" />
-    <select id="vendedorPago"></select>
-    <button onclick="registrarPago()">Registrar</button>
-    <p id="feedbackPago"></p>
-  </section>
-
-  <section>
-    <h3>📍 Consultar Eventos</h3>
-    <input id="imeiEventos" placeholder="IMEI del dispositivo" />
-    <button onclick="consultarEventos()">Consultar</button>
-    <table id="tablaEventos">
-      <tr><th>Evento</th><th>Fecha</th><th>Vendedor</th><th>Usuario</th></tr>
-    </table>
-  </section>
-
-  <section>
-    <h3>🔎 Buscar por Correo</h3>
-    <input id="correoBusqueda" placeholder="Correo del cliente" />
-    <button onclick="buscarPorCorreo()">Buscar</button>
-    <table id="tablaBusqueda">
-      <tr><th>IMEI</th><th>Producto</th><th>Fecha Venta</th><th>Tipo Licencia</th><th>Estado</th><th>Inicio</th><th>Fin</th></tr>
-    </table>
-  </section>
-
-  <section>
-    <h3>📤 Exportar Ventas</h3>
-    <button onclick="exportarCSV()">Exportar CSV</button>
-  </section>
+    cargarComercio()
+  </script>
 </body>
 </html>
