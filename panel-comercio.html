@@ -53,6 +53,7 @@ contenido.innerHTML = `
     <h3>Registrar nuevo vendedor</h3>
     <input type="text" id="nombreVendedor" placeholder="Nombre completo" />
 <input type="email" id="correoVendedor" placeholder="Correo electrónico" />
+<input type="text" id="cedulaVendedor" placeholder="Cédula de identidad" />
 <input type="tel" id="telefonoVendedor" placeholder="Teléfono" />
 <button onclick="crearVendedor()">Registrar</button>
 <div id="claveGenerada" style="margin-top:1em; background:#dff0d8; padding:1em; border-radius:4px; display:none;"></div>
@@ -120,10 +121,11 @@ contenido.innerHTML = `
 
 window.crearVendedor = async function () {
   const nombre = document.getElementById("nombreVendedor").value.trim()
+const cedula = document.getElementById("cedulaVendedor").value.trim()
   const correo = document.getElementById("correoVendedor").value.trim()
   const telefono = document.getElementById("telefonoVendedor").value.trim()
 
-  if (!nombre || !correo || !telefono) {
+  if (!nombre || !correo || !telefono || !cedula) {
     alert("Completa todos los campos antes de registrar.")
     return
   }
@@ -140,6 +142,15 @@ window.crearVendedor = async function () {
     return
   }
 
+ const { data: cedulasExistentes } = await supabase
+  .from("vendedores")
+  .select("id")
+  .eq("cedula", cedula)
+
+if (cedulasExistentes.length > 0) {
+  alert("Ya existe un vendedor con esa cédula.")
+  return
+}
   // Generar clave aleatoria de 8 caracteres
   const clave = Math.random().toString(36).slice(-8)
 
