@@ -48,6 +48,17 @@
 
       if (vista === 'vendedores') {
         const { data: vendedores } = await supabase.from('vendedores').select('*').eq('comercio_id', comercioId)
+contenido.innerHTML = `
+  <div class="card">
+    <h3>Registrar nuevo vendedor</h3>
+    <input type="text" id="nombreVendedor" placeholder="Nombre completo" />
+    <input type="email" id="correoVendedor" placeholder="Correo electrónico" />
+    <input type="tel" id="telefonoVendedor" placeholder="Teléfono" />
+    <button onclick="crearVendedor()">Registrar</button>
+  </div>
+` + vendedores.map(v =>
+  `<div class="card"><strong>${v.nombre}</strong><br>${v.correo} | ${v.telefono}</div>`
+).join('')
         contenido.innerHTML = vendedores.map(v =>
           `<div class="card"><strong>${v.nombre}</strong><br>${v.correo} | ${v.telefono}</div>`
         ).join('')
@@ -108,6 +119,31 @@
   }).join('')
 }
     }
+
+async function crearVendedor() {
+  const nombre = document.getElementById("nombreVendedor").value.trim()
+  const correo = document.getElementById("correoVendedor").value.trim()
+  const telefono = document.getElementById("telefonoVendedor").value.trim()
+
+  if (!nombre || !correo || !telefono) {
+    alert("Completa todos los campos antes de registrar.")
+    return
+  }
+
+  const { error } = await supabase.from("vendedores").insert([{
+    nombre,
+    correo,
+    telefono,
+    comercio_id: comercioId
+  }])
+
+  if (error) {
+    alert("Error al registrar vendedor: " + error.message)
+  } else {
+    alert("Vendedor registrado correctamente.")
+    mostrar("vendedores") // recarga la vista
+  }
+}
 
     async function cargarComercio() {
       const { data: comercio } = await supabase.from('comercios').select('*').eq('id', comercioId).single()
