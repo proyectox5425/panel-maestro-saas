@@ -87,7 +87,7 @@
       const clave = document.getElementById('clave').value.trim();
       const errorMsg = document.getElementById('login-error');
 
-      const res = await fetch('/rpc/validar_login_vendedor', {
+      const res = await fetch('https://xhqhtzrcohovylcxibkf.supabase.co/rest/v1/rpc/validar_login_vendedor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ correo, clave })
