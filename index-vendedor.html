@@ -72,6 +72,10 @@
       </thead>
       <tbody></tbody>
     </table>
+
+<button onclick="cerrarSesion()" style="margin-top:1em; background:#e74c3c; color:white; border:none; padding:0.5em; border-radius:4px;">
+  Cerrar sesión
+</button>
   </div>
 
   <script>
@@ -140,56 +144,57 @@
     }
 
     async function enrolarDispositivo() {
-      try {
-        const imei = document.getElementById('imei').value.trim();
-        const nombre = document.getElementById('cliente-nombre').value.trim();
-        const cedula = document.getElementById('cliente-cedula').value.trim();
-        const telefono = document.getElementById('cliente-telefono').value.trim();
-        const modelo = obtenerDatosModelo();
+  try {
+    const imei = document.getElementById('imei').value.trim();
+    const nombre = document.getElementById('cliente-nombre').value.trim();
+    const cedula = document.getElementById('cliente-cedula').value.trim();
+    const telefono = document.getElementById('cliente-telefono').value.trim();
+    const modelo = obtenerDatosModelo();
 
-        const payload = {
-          imei, nombre, cedula, telefono,
-          vendedor_id, comercio_id,
-          fuente_modelo: modelo.fuente,
-          modelo_id: modelo.modelo_id || null,
-          marca_manual: modelo.marca || null,
-          modelo_manual: modelo.modelo || null
-        };
+    const payload = {
+      imei,
+      nombre,
+      cedula,
+      telefono,
+      vendedor_id,
+      comercio_id,
+      fuente_modelo: modelo.fuente,
+      modelo_id: modelo.modelo_id || null,
+      marca_manual: modelo.marca || null,
+      modelo_manual: modelo.modelo || null
+    };
 
-        const res = await fetch('/rpc/enrolar_dispositivo', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
+    const res = await fetch('/rpc/enrolar_dispositivo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
 
-        const result = await res.json();
+    const result = await res.json();
+    const msg = document.getElementById('enrolamiento-msg');
 
-        if (result.error) {
-          document.getElementById('enrolamiento-msg').textContent = result.error;
-        } else {
-          document.getElementById('enrolamiento-msg').textContent = "Dispositivo enrolado exitosamente.";
-          cargarHistorial();
-        }
-      } catch (err) {
-        document.getElementById('enrolamiento-msg').textContent = err.message;
+    if (result.error) {
+      msg.textContent = result.error;
+    } else {
+      msg.textContent = "Dispositivo enrolado exitosamente.";
+      cargarHistorial();
+
+      if (result.link_instalacion) {
+        mostrarQR(result.link_instalacion);
       }
-    
-if (result.link_instalacion) {
-  const qrContainer = document.createElement('div');
-  qrContainer.innerHTML = `
-    <h3>Instalación en el dispositivo</h3>
-    <p>Escanea este código desde el teléfono vendido:</p>
-    <canvas id="qrCanvas"></canvas>
-    <p><a href="${result.link_instalacion}" target="_blank">${result.link_instalacion}</a></p>
-  `;
-  document.getElementById('enrolamiento-section').appendChild(qrContainer);
 
-  // Generar QR
-  const qr = new QRious({
-    element: document.getElementById('qrCanvas'),
-    value: result.link_instalacion,
-    size: 200
-  });
+      // 🧹 Limpieza post-registro
+      document.getElementById('imei').value = '';
+      document.getElementById('cliente-nombre').value = '';
+      document.getElementById('cliente-cedula').value = '';
+      document.getElementById('cliente-telefono').value = '';
+      document.getElementById('modelo-select').value = '';
+      document.getElementById('marca-manual').value = '';
+      document.getElementById('modelo-manual').value = '';
+    }
+  } catch (err) {
+    document.getElementById('enrolamiento-msg').textContent = err.message;
+  }
 }
 
     async function cargarHistorial() {
@@ -209,6 +214,41 @@ if (result.link_instalacion) {
         tbody.appendChild(row);
       });
     }
+
+function cerrarSesion() {
+  vendedor_id = null;
+  comercio_id = null;
+  document.getElementById('login-section').style.display = 'block';
+  document.getElementById('enrolamiento-section').style.display = 'none';
+  document.getElementById('historial-section').style.display = 'none';
+  document.getElementById('correo').value = '';
+  document.getElementById('clave').value = '';
+  document.getElementById('login-error').textContent = '';
+}
+
+function mostrarQR(link) {
+  // Elimina cualquier QR anterior
+  const anterior = document.getElementById('qrContainer');
+  if (anterior) anterior.remove();
+
+  // Crea el nuevo contenedor
+  const contenedor = document.createElement('div');
+  contenedor.id = 'qrContainer';
+  contenedor.innerHTML = `
+    <h3>Instalación en el dispositivo</h3>
+    <p>Escanea este código desde el teléfono vendido:</p>
+    <canvas id="qrCanvas"></canvas>
+    <p><a href="${link}" target="_blank">${link}</a></p>
+  `;
+  document.getElementById('enrolamiento-section').appendChild(contenedor);
+
+  // Genera el QR
+  new QRious({
+    element: document.getElementById('qrCanvas'),
+    value: link,
+    size: 200
+  });
+}
   </script>
 
 </body>
