@@ -13,14 +13,6 @@
     table { width: 100%; border-collapse: collapse; margin-top: 1em; }
     th, td { border: 1px solid #ccc; padding: 0.5em; text-align: left; }
   </style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-<script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
-<script>
-  const supabase = supabase.createClient(
-    'https://xhqhtzrcohovylcxibkf.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhocWh0enJjb2hvdnlsY3hpYmtmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4Njg3NTEsImV4cCI6MjA3MDQ0NDc1MX0.aTAOD-m3n2n6MAg1Cx2lDOPAD4jT2z4bcQXjxZwgllI'
-  );
-</script>
 </head>
 <body>
 
@@ -85,7 +77,14 @@
 </button>
   </div>
 
-  <script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
+<script>
+  const supabase = supabase.createClient(
+    'https://xhqhtzrcohovylcxibkf.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhocWh0enJjb2hvdnlsY3hpYmtmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4Njg3NTEsImV4cCI6MjA3MDQ0NDc1MX0.aTAOD-m3n2n6MAg1Cx2lDOPAD4jT2z4bcQXjxZwgllI'
+  );
+
     let vendedor_id = null;
     let comercio_id = null;
 
@@ -134,6 +133,12 @@
     const cedula = document.getElementById('cliente-cedula').value.trim();
     const telefono = document.getElementById('cliente-telefono').value.trim();
     const modelo = obtenerDatosModelo();
+const msg = document.getElementById('enrolamiento-msg');
+
+if (!imei || !nombre || !cedula || !telefono) {
+  msg.textContent = "Todos los campos son obligatorios.";
+  return;
+}
 
     const payload = {
       imei,
@@ -149,7 +154,6 @@
     };
 
     const { data, error } = await supabase.rpc('enrolar_dispositivo', payload);
-    const msg = document.getElementById('enrolamiento-msg');
 
     if (error || !data) {
       msg.textContent = error?.message || "Error al enrolar dispositivo.";
@@ -157,6 +161,7 @@
     }
 
     msg.textContent = "Dispositivo enrolado exitosamente.";
+setTimeout(() => { msg.textContent = ''; }, 5000);
     cargarHistorial();
 
     if (data.link_instalacion) {
