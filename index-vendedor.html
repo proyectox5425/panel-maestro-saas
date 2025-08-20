@@ -1,134 +1,215 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Panel Vendedor – SAAS</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel Vendedor</title>
+  <style>
+    body { font-family: sans-serif; padding: 1em; background: #f9f9f9; }
+    .section { margin-bottom: 2em; }
+    input, select, button { display: block; margin: 0.5em 0; padding: 0.5em; width: 100%; }
+    .error-msg { color: red; font-size: 0.9em; }
+    .success-msg { color: green; font-size: 0.9em; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1em; }
+    th, td { border: 1px solid #ccc; padding: 0.5em; text-align: left; }
+  </style>
+<script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
 </head>
-<body class="bg-gray-100 font-sans">
+<body>
 
-  <!-- Encabezado institucional -->
-  <header class="bg-indigo-600 text-white p-4 shadow-md">
-    <h1 class="text-xl font-bold">SAAS – Panel Vendedor</h1>
-    <p class="text-sm">Enrolamiento de dispositivos vendidos a crédito</p>
-  </header>
-
-  <!-- Login -->
-  <section class="max-w-md mx-auto mt-10 bg-white p-6 rounded-lg shadow-lg">
-    <h2 class="text-lg font-semibold mb-4">Inicio de sesión</h2>
-    <form id="loginForm" class="space-y-4">
-      <input type="email" name="correo" placeholder="Correo institucional" class="w-full p-2 border rounded" required>
-      <input type="password" name="clave" placeholder="Clave de acceso" class="w-full p-2 border rounded" required>
-      <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700">Ingresar</button>
-    </form>
-    <div id="loginFeedback" class="mt-4 text-sm text-red-600"></div>
-  </section>
-
-  <!-- Menú principal (oculto hasta login) -->
-  <section id="menuPrincipal" class="max-w-md mx-auto mt-10 hidden">
-    <div class="bg-white p-6 rounded-lg shadow-lg space-y-4">
-      <h2 class="text-lg font-semibold">Menú principal</h2>
-      <button onclick="document.getElementById('enrolamiento').classList.remove('hidden')" class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">
-  Enrolar dispositivo
-      </button>
-      <button class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Ver historial de ventas</button>
-      <button class="w-full bg-gray-600 text-white py-2 rounded hover:bg-gray-700">Cerrar sesión</button>
-    </div>
-  </section>
-
-  <!-- Modal de enrolamiento -->
-<div id="enrolamiento" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-  <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md relative">
-    <button onclick="document.getElementById('enrolamiento').classList.add('hidden')" class="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl font-bold">&times;</button>
-    <h2 class="text-lg font-semibold mb-4">Enrolar dispositivo</h2>
-    <form id="formEnrolar" class="space-y-3">
-      <input type="text" name="imei" placeholder="IMEI del dispositivo" class="w-full p-2 border rounded" required>
-      <input type="text" name="marca" placeholder="Marca" class="w-full p-2 border rounded" required>
-      <input type="text" name="modelo" placeholder="Modelo" class="w-full p-2 border rounded" required>
-      <input type="text" name="cliente_nombre" placeholder="Nombre del cliente" class="w-full p-2 border rounded" required>
-      <input type="text" name="cliente_cedula" placeholder="Cédula" class="w-full p-2 border rounded" required>
-      <input type="text" name="cliente_telefono" placeholder="Teléfono" class="w-full p-2 border rounded" required>
-      <button type="submit" class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">Enrolar</button>
-    </form>
-    <div id="feedbackEnrolamiento" class="text-sm mt-2"></div>
+  <!-- 🔐 Login institucional -->
+  <div id="login-section" class="section">
+    <h2>Ingreso Vendedor</h2>
+    <input type="email" id="correo" placeholder="Correo institucional" />
+    <input type="password" id="clave" placeholder="Clave de acceso" />
+    <button onclick="loginVendedor()">Ingresar</button>
+    <p id="login-error" class="error-msg"></p>
   </div>
-</div>
 
-  <!-- Supabase v1 desde CDN -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <!-- 📲 Enrolamiento de dispositivo -->
+  <div id="enrolamiento-section" class="section" style="display:none;">
+    <h2>Enrolar Dispositivo</h2>
 
-<script>
-  const supabase = window.supabase.createClient(
-    'https://xhqhtzrcohovylcxibkf.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhocWh0enJjb2hvdnlsY3hpYmtmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4Njg3NTEsImV4cCI6MjA3MDQ0NDc1MX0.aTAOD-m3n2n6MAg1Cx2lDOPAD4jT2z4bcQXjxZwgllI'
-  );
-  const vendedor_id = '46867ced-d0c6-4311-b8da-24756366aaa2';
+    <label for="imei">IMEI</label>
+    <input type="text" id="imei" placeholder="IMEI del dispositivo" />
 
-  document.addEventListener('DOMContentLoaded', () => {
-    console.log('🧪 Script cargado correctamente');
+    <label for="cliente-nombre">Nombre del cliente</label>
+    <input type="text" id="cliente-nombre" placeholder="Nombre completo" />
 
-    // Login
-    const loginForm = document.getElementById('loginForm');
-    if (!loginForm) {
-      console.error('❌ No se encontró el formulario con id="loginForm"');
-      return;
-    }
+    <label for="cliente-cedula">Cédula</label>
+    <input type="text" id="cliente-cedula" placeholder="Cédula de identidad" />
 
-    loginForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const correo = e.target.correo.value.trim().toLowerCase();
-      const clave = e.target.clave.value.trim();
+    <label for="cliente-telefono">Teléfono</label>
+    <input type="text" id="cliente-telefono" placeholder="Teléfono móvil" />
 
-      if (correo === 'vendedor@wioo.app' && clave === '123456') {
-  console.log('✅ Login exitoso');
-  document.getElementById('loginFeedback').innerText = '';
-  document.getElementById('menuPrincipal').classList.remove('hidden');
-  loginForm.parentElement.classList.add('hidden');
-    } else {
-        console.warn('⚠️ Credenciales incorrectas');
-        document.getElementById('loginFeedback').innerText = 'Credenciales inválidas';
-      }
-    });
+    <label for="modelo-select">Modelo del teléfono (catálogo)</label>
+    <select id="modelo-select">
+      <option value="">-- Seleccionar modelo --</option>
+    </select>
 
-    // Enrolamiento
-    const formEnrolar = document.getElementById('formEnrolar');
-    if (!formEnrolar) {
-      console.error('❌ No se encontró el formulario con id="formEnrolar"');
-      return;
-    }
+    <label for="marca-manual">Marca (manual)</label>
+    <input type="text" id="marca-manual" placeholder="Ej: Xiaomi" />
 
-    formEnrolar.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const form = e.target;
-      const { imei, marca, modelo, cliente_nombre, cliente_cedula, cliente_telefono } = form;
+    <label for="modelo-manual">Modelo (manual)</label>
+    <input type="text" id="modelo-manual" placeholder="Ej: Redmi Note 13" />
 
-      const { data, error } = await supabase.rpc('enrolar_dispositivo', {
-        imei_input: imei.value,
-        marca_input: marca.value,
-        modelo_input: modelo.value,
-        cliente_nombre_input: cliente_nombre.value,
-        cliente_cedula_input: cliente_cedula.value,
-        cliente_telefono_input: cliente_telefono.value,
-        vendedor_id_input: vendedor_id
+    <button onclick="enrolarDispositivo()">Registrar venta</button>
+    <p id="enrolamiento-msg" class="success-msg"></p>
+  </div>
+
+  <!-- 📋 Historial de ventas -->
+  <div id="historial-section" class="section" style="display:none;">
+    <h2>Historial de Ventas</h2>
+    <table id="tabla-ventas">
+      <thead>
+        <tr>
+          <th>IMEI</th>
+          <th>Cliente</th>
+          <th>Modelo</th>
+          <th>Estado</th>
+          <th>Fecha</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script>
+    let vendedor_id = null;
+    let comercio_id = null;
+
+    async function loginVendedor() {
+      const correo = document.getElementById('correo').value.trim();
+      const clave = document.getElementById('clave').value.trim();
+      const errorMsg = document.getElementById('login-error');
+
+      const res = await fetch('/rpc/validar_login_vendedor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ correo, clave })
       });
 
-      const feedback = document.getElementById('feedbackEnrolamiento');
-      if (error) {
-        console.error('❌ Error en RPC:', error.message);
-        feedback.innerText = `❌ Error: ${error.message}`;
-        feedback.classList.remove('text-green-600');
-        feedback.classList.add('text-red-600');
-      } else {
-        console.log('✅ Dispositivo enrolado:', data);
-        feedback.innerText = `✅ Dispositivo enrolado: ${data.imei}`;
-        feedback.classList.remove('text-red-600');
-        feedback.classList.add('text-green-600');
-        form.reset();
+      const data = await res.json();
+
+      if (data.length === 0) {
+        errorMsg.textContent = "Credenciales inválidas o vendedor inactivo.";
+        return;
       }
-    });
+
+      vendedor_id = data[0].id;
+      comercio_id = data[0].comercio_id;
+
+      document.getElementById('login-section').style.display = 'none';
+      document.getElementById('enrolamiento-section').style.display = 'block';
+      document.getElementById('historial-section').style.display = 'block';
+
+      cargarCatalogo();
+      cargarHistorial();
+    }
+
+    async function cargarCatalogo() {
+      const res = await fetch(`/rpc/obtener_catalogo?comercio_id=${comercio_id}`);
+      const modelos = await res.json();
+      const select = document.getElementById('modelo-select');
+      modelos.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m.id;
+        opt.textContent = `${m.marca} ${m.modelo}`;
+        select.appendChild(opt);
+      });
+    }
+
+    function obtenerDatosModelo() {
+      const modeloCatalogo = document.getElementById('modelo-select').value;
+      const marcaManual = document.getElementById('marca-manual').value.trim();
+      const modeloManual = document.getElementById('modelo-manual').value.trim();
+
+      if (modeloCatalogo) {
+        return { fuente: 'catalogo', modelo_id: modeloCatalogo };
+      }
+
+      if (!marcaManual || !modeloManual) {
+        throw new Error("Debes ingresar marca y modelo manual si no usas el catálogo.");
+      }
+
+      return {
+        fuente: 'manual',
+        marca: marcaManual,
+        modelo: modeloManual
+      };
+    }
+
+    async function enrolarDispositivo() {
+      try {
+        const imei = document.getElementById('imei').value.trim();
+        const nombre = document.getElementById('cliente-nombre').value.trim();
+        const cedula = document.getElementById('cliente-cedula').value.trim();
+        const telefono = document.getElementById('cliente-telefono').value.trim();
+        const modelo = obtenerDatosModelo();
+
+        const payload = {
+          imei, nombre, cedula, telefono,
+          vendedor_id, comercio_id,
+          fuente_modelo: modelo.fuente,
+          modelo_id: modelo.modelo_id || null,
+          marca_manual: modelo.marca || null,
+          modelo_manual: modelo.modelo || null
+        };
+
+        const res = await fetch('/rpc/enrolar_dispositivo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await res.json();
+
+        if (result.error) {
+          document.getElementById('enrolamiento-msg').textContent = result.error;
+        } else {
+          document.getElementById('enrolamiento-msg').textContent = "Dispositivo enrolado exitosamente.";
+          cargarHistorial();
+        }
+      } catch (err) {
+        document.getElementById('enrolamiento-msg').textContent = err.message;
+      }
+    
+if (result.link_instalacion) {
+  const qrContainer = document.createElement('div');
+  qrContainer.innerHTML = `
+    <h3>Instalación en el dispositivo</h3>
+    <p>Escanea este código desde el teléfono vendido:</p>
+    <canvas id="qrCanvas"></canvas>
+    <p><a href="${result.link_instalacion}" target="_blank">${result.link_instalacion}</a></p>
+  `;
+  document.getElementById('enrolamiento-section').appendChild(qrContainer);
+
+  // Generar QR
+  const qr = new QRious({
+    element: document.getElementById('qrCanvas'),
+    value: result.link_instalacion,
+    size: 200
   });
-</script>
+}
+
+    async function cargarHistorial() {
+      const res = await fetch(`/rpc/historial_ventas?vendedor_id=${vendedor_id}`);
+      const ventas = await res.json();
+      const tbody = document.querySelector('#tabla-ventas tbody');
+      tbody.innerHTML = '';
+      ventas.forEach(v => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${v.imei}</td>
+          <td>${v.cliente_nombre}</td>
+          <td>${v.modelo_texto}</td>
+          <td>${v.estado}</td>
+          <td>${v.fecha}</td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+  </script>
 
 </body>
 </html>
