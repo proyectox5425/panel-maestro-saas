@@ -52,16 +52,14 @@ contenido.innerHTML = `
   <div class="card">
     <h3>Registrar nuevo vendedor</h3>
     <input type="text" id="nombreVendedor" placeholder="Nombre completo" />
-    <input type="email" id="correoVendedor" placeholder="Correo electrónico" />
-    <input type="tel" id="telefonoVendedor" placeholder="Teléfono" />
-    <button onclick="crearVendedor()">Registrar</button>
+<input type="email" id="correoVendedor" placeholder="Correo electrónico" />
+<input type="tel" id="telefonoVendedor" placeholder="Teléfono" />
+<button onclick="crearVendedor()">Registrar</button>
+<div id="claveGenerada" style="margin-top:1em; background:#dff0d8; padding:1em; border-radius:4px; display:none;"></div>
   </div>
 ` + vendedores.map(v =>
   `<div class="card"><strong>${v.nombre}</strong><br>${v.correo} | ${v.telefono}</div>`
 ).join('')
-        contenido.innerHTML = vendedores.map(v =>
-          `<div class="card"><strong>${v.nombre}</strong><br>${v.correo} | ${v.telefono}</div>`
-        ).join('')
       }
 
       if (vista === 'catalogo') {
@@ -130,17 +128,26 @@ async function crearVendedor() {
     return
   }
 
+  // Generar clave aleatoria de 8 caracteres
+  const clave = Math.random().toString(36).slice(-8)
+
   const { error } = await supabase.from("vendedores").insert([{
     nombre,
     correo,
     telefono,
+    clave,
     comercio_id: comercioId
   }])
 
   if (error) {
     alert("Error al registrar vendedor: " + error.message)
   } else {
-    alert("Vendedor registrado correctamente.")
+    document.getElementById("claveGenerada").style.display = "block"
+    document.getElementById("claveGenerada").innerHTML = `
+      <strong>Vendedor registrado correctamente.</strong><br>
+      <strong>Clave única:</strong> <code>${clave}</code><br>
+      <em>Guárdala ahora. No se volverá a mostrar.</em>
+    `
     mostrar("vendedores") // recarga la vista
   }
 }
