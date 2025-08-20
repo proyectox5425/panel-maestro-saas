@@ -155,12 +155,13 @@ if (cedulasExistentes.length > 0) {
   const clave = Math.random().toString(36).slice(-8)
 
   const { error } = await supabase.from("vendedores").insert([{
-    nombre,
-    correo,
-    telefono,
-    clave,
-    comercio_id: comercioId
-  }])
+  nombre,
+  correo,
+  telefono,
+  cedula,
+  clave,
+  comercio_id: comercioId
+}])
 
   if (error) {
     alert("Error al registrar vendedor: " + error.message)
