@@ -118,13 +118,25 @@ contenido.innerHTML = `
 }
     }
 
-async function crearVendedor() {
+window.crearVendedor = async function () {
   const nombre = document.getElementById("nombreVendedor").value.trim()
   const correo = document.getElementById("correoVendedor").value.trim()
   const telefono = document.getElementById("telefonoVendedor").value.trim()
 
   if (!nombre || !correo || !telefono) {
     alert("Completa todos los campos antes de registrar.")
+    return
+  }
+
+  // Verificar si ya existe un vendedor con ese correo
+  const { data: existentes } = await supabase
+    .from("vendedores")
+    .select("id")
+    .eq("correo", correo)
+    .eq("comercio_id", comercioId)
+
+  if (existentes.length > 0) {
+    alert("Ya existe un vendedor registrado con ese correo.")
     return
   }
 
