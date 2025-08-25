@@ -20,6 +20,7 @@
     <input type="text" id="nombre" placeholder="Nombre del comercio" />
     <input type="text" id="rif" placeholder="RIF (ej. J-12345678-9)" />
     <input type="email" id="correo" placeholder="Correo institucional del comercio" />
+<input type="number" id="cantidad_licencias" placeholder="Licencias iniciales" min="1" />
     <select id="estado">
       <option value="">-- Estado --</option>
       <option value="activo">Activo</option>
@@ -41,6 +42,23 @@
     </thead>
     <tbody></tbody>
   </table>
+
+<div id="licenciasBlock" class="form-block" style="display:none;">
+  <h3>🎫 Licencias asignadas</h3>
+  <table id="tabla_licencias">
+    <thead>
+      <tr>
+        <th>Tipo</th>
+        <th>Total</th>
+        <th>Consumidas</th>
+        <th>Disponibles</th>
+        <th>Tolerancia (días)</th>
+        <th>Creado en</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
 
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
@@ -76,12 +94,44 @@
     }
 
     function editar(c) {
-      document.getElementById('comercio_id').value = c.id;
-      document.getElementById('nombre').value = c.nombre;
-      document.getElementById('rif').value = c.rif;
-      document.getElementById('estado').value = c.activo ? 'activo' : 'inactivo';
-      document.getElementById('correo').value = c.correo;
-    }
+  document.getElementById('comercio_id').value = c.id;
+  document.getElementById('nombre').value = c.nombre;
+  document.getElementById('rif').value = c.rif;
+  document.getElementById('estado').value = c.activo ? 'activo' : 'inactivo';
+  document.getElementById('correo').value = c.correo;
+  cargarLicencias(c.id);
+}
+
+async function cargarLicencias(comercio_id) {
+  const { data, error } = await supabase
+    .from('lotes_licencias')
+    .select('*')
+    .eq('comercio_id', comercio_id)
+    .order('creado_en', { ascending: false });
+
+  const tbody = document.querySelector('#tabla_licencias tbody');
+  tbody.innerHTML = '';
+  if (error || !data || data.length === 0) {
+    document.getElementById('licenciasBlock').style.display = 'none';
+    return;
+  }
+
+  data.forEach(l => {
+    const disponibles = l.cantidad_total - l.cantidad_consumida;
+    const fila = document.createElement('tr');
+    fila.innerHTML = `
+      <td>${l.tipo}</td>
+      <td>${l.cantidad_total}</td>
+      <td>${l.cantidad_consumida}</td>
+      <td>${disponibles}</td>
+      <td>${l.tolerancia_dias}</td>
+      <td>${new Date(l.creado_en).toLocaleDateString()}</td>
+    `;
+    tbody.appendChild(fila);
+  });
+
+  document.getElementById('licenciasBlock').style.display = 'block';
+}
 
     async function guardarComercio() {
       const id = document.getElementById('comercio_id').value;
@@ -109,6 +159,18 @@
         if (error || !data || !data[0]) return alert('❌ Error al crear comercio');
         comercio_id = data[0].id;
 
+const cantidadLicencias = parseInt(document.getElementById('cantidad_licencias').value);
+if (!cantidadLicencias || cantidadLicencias < 1) return alert('❌ Cantidad de licencias inválida');
+
+await supabase.from('lotes_licencias').insert({
+  comercio_id,
+  cantidad_total: cantidadLicencias,
+  cantidad_consumida: 0,
+  tipo: 'bloqueo_total',
+  tolerancia_dias: 3,
+  creado_en: new Date().toISOString()
+});
+
         claveGenerada = Math.random().toString(36).slice(-8).toUpperCase();
         const { error: errorUsuario } = await supabase.from('usuarios_comercios').insert({
           comercio_id,
@@ -133,6 +195,7 @@
       document.getElementById('rif').value = '';
       document.getElementById('correo').value = '';
       document.getElementById('estado').value = '';
+document.getElementById('cantidad_licencias').value = '';
       cargarComercios();
     }
 
