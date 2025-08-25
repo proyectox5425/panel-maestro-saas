@@ -284,6 +284,7 @@
   <td>${licencia.token || '—'}</td>
   <td>${licencia.token ? `<a href="https://panel.com/licencia/${licencia.token}" target="_blank">Ver</a>` : '—'}</td>
   <td>${licencia.lote_id || '—'}</td>
+<td><button onclick="verAuditoria('${licencia.token}')">Auditar</button></td>
 `
       tablaLicencias.appendChild(fila)
     })
@@ -367,6 +368,16 @@ async function cargarLotes() {
     }
   }
 
+async function verAuditoria(token) {
+  const { data, error } = await supabase
+    .from('eventos')
+    .select('*')
+    .eq('token', token)
+    .order('creado_en', { ascending: false })
+
+  if (error) return console.error('Error al cargar auditoría:', error)
+  console.table(data)
+}
   document.getElementById('formLicenciaIndividual').addEventListener('submit', crearLicenciaIndividual)
   document.getElementById('formLoteLicencias').addEventListener('submit', crearLoteLicencias)
   document.getElementById('formFinanciero').addEventListener('submit', ejecutarAccionFinanciera)
