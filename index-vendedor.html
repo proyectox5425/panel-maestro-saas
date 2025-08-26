@@ -138,6 +138,17 @@
     const modelo = obtenerDatosModelo();
 const msg = document.getElementById('enrolamiento-msg');
 
+const { data: lotes } = await supabase
+  .from('lotes')
+  .select('cantidad_total, cantidad_usada')
+  .eq('comercio_id', comercio_id);
+
+const disponibles = lotes.reduce((acc, l) => acc + (l.cantidad_total - l.cantidad_usada), 0);
+if (disponibles <= 0) {
+  msg.textContent = "No hay licencias disponibles para este comercio.";
+  return;
+}
+
 if (!imei || !nombre || !cedula || !telefono) {
   msg.textContent = "Todos los campos son obligatorios.";
   return;
@@ -170,6 +181,16 @@ setTimeout(() => { msg.textContent = ''; }, 5000);
     if (data.link_instalacion) {
       mostrarQR(data.link_instalacion);
     }
+
+await supabase.from('eventos').insert({
+  tipo: 'dispositivo_enrolado',
+  descripcion: `IMEI ${imei} registrado por vendedor ${vendedor_id}`,
+  usuario: vendedor_id,
+  origen: 'panel_vendedor',
+  creado_en: new Date().toISOString(),
+  id_panel: 'enrolamiento',
+  token: data.token
+});
 
     // 🧹 Limpieza post-registro
     document.getElementById('imei').value = '';
