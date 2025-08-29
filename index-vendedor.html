@@ -205,6 +205,14 @@ window.addEventListener('DOMContentLoaded', () => {
       msg.innerHTML = "Dispositivo enrolado exitosamente.<br/>";
       msg.appendChild(qrImg);
 
+const link = 'https://github.com/proyectox5425/app-cliente/releases/download/v1.0.0/Wiico-unsigned.apk';
+const linkElement = document.createElement('a');
+linkElement.href = link;
+linkElement.textContent = 'Instalar app cliente';
+linkElement.target = '_blank';
+msg.appendChild(document.createElement('br'));
+msg.appendChild(linkElement);
+
       // Registrar evento institucional
       await supabase.from('eventos').insert({
         tipo: 'venta',
