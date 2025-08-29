@@ -16,7 +16,6 @@
 </head>
 <body>
 
-  <!-- 🔐 Login institucional -->
   <div id="login-section" class="section">
     <h2>Ingreso Vendedor</h2>
     <input type="email" id="correo" placeholder="Correo institucional" />
@@ -25,7 +24,6 @@
     <p id="login-error" class="error-msg"></p>
   </div>
 
-  <!-- 📲 Enrolamiento de dispositivo -->
   <div id="enrolamiento-section" class="section" style="display:none;">
     <h2>Enrolar Dispositivo</h2>
 
@@ -56,7 +54,6 @@
     <p id="enrolamiento-msg" class="success-msg"></p>
   </div>
 
-  <!-- 📋 Historial de ventas -->
   <div id="historial-section" class="section" style="display:none;">
     <h2>Historial de Ventas</h2>
     <table id="tabla-ventas">
@@ -72,195 +69,207 @@
       <tbody></tbody>
     </table>
 
-<button onclick="cerrarSesion()" style="margin-top:1em; background:#e74c3c; color:white; border:none; padding:0.5em; border-radius:4px;">
-  Cerrar sesión
-</button>
+    <button onclick="cerrarSesion()" style="margin-top:1em; background:#e74c3c; color:white; border:none; padding:0.5em; border-radius:4px;">
+      Cerrar sesión
+    </button>
   </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
 
-<!-- ✅ Esperamos a que las librerías estén cargadas -->
 <script>
-  window.addEventListener('DOMContentLoaded', () => {
-    const supabase = window.supabase.createClient(
-      'https://xhqhtzrcohovylcxibkf.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhocWh0enJjb2hvdnlsY3hpYmtmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4Njg3NTEsImV4cCI6MjA3MDQ0NDc1MX0.aTAOD-m3n2n6MAg1Cx2lDOPAD4jT2z4bcQXjxZwgllI'
-    );
+window.addEventListener('DOMContentLoaded', () => {
+  const supabase = window.supabase.createClient(
+    'https://xhqhtzrcohovylcxibkf.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhocWh0enJjb2hvdnlsY3hpYmtmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4Njg3NTEsImV4cCI6MjA3MDQ0NDc1MX0.aTAOD-m3n2n6MAg1Cx2lDOPAD4jT2z4bcQXjxZwgllI'
+  );
 
-    let vendedor_id = null;
-    let comercio_id = null;
+  let vendedor_id = null;
+  let comercio_id = null;
 
-    async function loginVendedor() {
-  const correo = document.getElementById('correo').value.trim();
-  const clave = document.getElementById('clave').value.trim();
-  const errorMsg = document.getElementById('login-error');
+  async function loginVendedor() {
+    const correo = document.getElementById('correo').value.trim();
+    const clave = document.getElementById('clave').value.trim();
+    const errorMsg = document.getElementById('login-error');
 
-  const { data, error } = await supabase.rpc('validar_login_vendedor', { correo, clave });
+    const { data, error } = await supabase.rpc('validar_login_vendedor', { correo, clave });
 
-  if (error || !data || data.length === 0) {
-    errorMsg.textContent = "Credenciales inválidas o vendedor inactivo.";
-    return;
-  }
-
-  vendedor_id = data[0].id;
-  comercio_id = data[0].comercio_id;
-
-  document.getElementById('login-section').style.display = 'none';
-  document.getElementById('enrolamiento-section').style.display = 'block';
-  document.getElementById('historial-section').style.display = 'block';
-
-  cargarCatalogo();
-  cargarHistorial();
-}
-
-    async function cargarCatalogo() {
-  const { data, error } = await supabase.rpc('obtener_catalogo', { comercio_id });
-
-  if (error || !data) return;
-
-  const select = document.getElementById('modelo-select');
-  select.innerHTML = '<option value="">-- Seleccionar modelo --</option>';
-  data.forEach(m => {
-    const opt = document.createElement('option');
-    opt.value = m.id;
-    opt.textContent = `${m.marca} ${m.modelo}`;
-    select.appendChild(opt);
-  });
-}
-
-    async function enrolarDispositivo() {
-  try {
-    const imei = document.getElementById('imei').value.trim();
-    const nombre = document.getElementById('cliente-nombre').value.trim();
-    const cedula = document.getElementById('cliente-cedula').value.trim();
-    const telefono = document.getElementById('cliente-telefono').value.trim();
-    const modelo = obtenerDatosModelo();
-const msg = document.getElementById('enrolamiento-msg');
-
-const { data: lotes } = await supabase
-  .from('lotes')
-  .select('cantidad_total, cantidad_usada')
-  .eq('comercio_id', comercio_id);
-
-const disponibles = lotes.reduce((acc, l) => acc + (l.cantidad_total - l.cantidad_usada), 0);
-if (disponibles <= 0) {
-  msg.textContent = "No hay licencias disponibles para este comercio.";
-  return;
-}
-
-if (!imei || !nombre || !cedula || !telefono) {
-  msg.textContent = "Todos los campos son obligatorios.";
-  return;
-}
-
-    const payload = {
-      imei,
-      nombre,
-      cedula,
-      telefono,
-      vendedor_id,
-      comercio_id,
-      fuente_modelo: modelo.fuente,
-      modelo_id: modelo.modelo_id || null,
-      marca_manual: modelo.marca || null,
-      modelo_manual: modelo.modelo || null
-    };
-
-    const { data, error } = await supabase.rpc('enrolar_dispositivo', payload);
-
-    if (error || !data) {
-      msg.textContent = error?.message || "Error al enrolar dispositivo.";
+    if (error || !data || data.length === 0) {
+      errorMsg.textContent = "Credenciales inválidas o vendedor inactivo.";
       return;
     }
 
-    msg.textContent = "Dispositivo enrolado exitosamente.";
-setTimeout(() => { msg.textContent = ''; }, 5000);
+    vendedor_id = data[0].id;
+    comercio_id = data[0].comercio_id;
+
+    document.getElementById('login-section').style.display = 'none';
+    document.getElementById('enrolamiento-section').style.display = 'block';
+    document.getElementById('historial-section').style.display = 'block';
+
+    cargarCatalogo();
     cargarHistorial();
+  }
 
-    if (data.link_instalacion) {
-      mostrarQR(data.link_instalacion);
-    }
+  async function cargarCatalogo() {
+    const { data, error } = await supabase.rpc('obtener_catalogo', { comercio_id });
+    if (error || !data) return;
 
-await supabase.from('eventos').insert({
-  tipo: 'dispositivo_enrolado',
-  descripcion: `IMEI ${imei} registrado por vendedor ${vendedor_id}`,
-  usuario: vendedor_id,
-  origen: 'panel_vendedor',
-  creado_en: new Date().toISOString(),
-  id_panel: 'enrolamiento',
-  token: data.token
+    const select = document.getElementById('modelo-select');
+    select.innerHTML = '<option value="">-- Seleccionar modelo --</option>';
+    data.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m.id;
+      opt.textContent = `${m.marca} ${m.modelo}`;
+      select.appendChild(opt);
+    });
+  }
+
+  function obtenerDatosModelo() {
+    const modelo_id = document.getElementById('modelo-select').value;
+    const marca = document.getElementById('marca-manual').value.trim();
+    const modelo = document.getElementById('modelo-manual').value.trim();
+
+    if (modelo_id) return { fuente: 'catalogo', modelo_id };
+    if (marca && modelo) return { fuente: 'manual', marca, modelo };
+    return { fuente: 'desconocido' };
+  }
+
+  async function enrolarDispositivo() {
+    try {
+      const imei = document.getElementById('imei').value.trim();
+      const nombre = document.getElementById('cliente-nombre').value.trim();
+      const cedula = document.getElementById('cliente-cedula').value.trim();
+      const telefono = document.getElementById('cliente-telefono').value.trim();
+      const modelo = obtenerDatosModelo();
+      const msg = document.getElementById('enrolamiento-msg');
+
+      if (!imei || !nombre || !cedula || !telefono) {
+        msg.textContent = "Todos los campos son obligatorios.";
+        return;
+      }
+
+      if (modelo.fuente === 'desconocido') {
+        msg.textContent = "Debes seleccionar un modelo o ingresarlo manualmente.";
+        return;
+      }
+
+      const { data: existente } = await supabase
+        .from('licencias')
+        .select('id')
+        .eq('imei', imei)
+        .single();
+
+      if (existente) {
+        msg.textContent = "Este IMEI ya fue enrolado.";
+        return;
+      }
+
+      const { data: lotes } = await supabase
+        .from('lotes')
+        .select('cantidad_total, cantidad_usada')
+        .eq('comercio_id', comercio_id);
+
+      const disponibles = lotes.reduce((acc, l) => acc + (l.cantidad_total - l.cantidad_usada), 0);
+      if (disponibles <= 0) {
+        msg.textContent = "No hay licencias disponibles para este comercio.";
+        return;
+      }
+
+      const payload = {
+        imei,
+        nombre,
+        cedula,
+        telefono,
+        vendedor_id,
+        comercio_id,
+        fuente_modelo: modelo.fuente,
+        modelo_id: modelo.modelo_id || null,
+        marca_manual: modelo.marca || null,
+        modelo_manual: modelo.modelo || null
+      };
+
+      const { data, error } = await supabase.rpc('enrolar_dispositivo', payload);
+      if (error || !data) {
+        msg.textContent = "Error al registrar el dispositivo.";
+        return;
+      }
+
+      const qr = new QRious({
+        value: `IMEI:${imei}|Cliente:${nombre}|Modelo:${modelo.modelo || modelo.modelo_id}`,
+        size: 200
+[43dcd9a7-70db-4a1f-b0ae-981daa162054](https://github.com/karames/curso-markdown-master/tree/9a65a17dd637e2be8fee24d6ea6c5558403d5487/markdown%2F100-codigo-fuente.md?citationMarker=43dcd9a7-70db-4a1f-b0ae-981daa162054 "1")
 });
 
-    // 🧹 Limpieza post-registro
-    document.getElementById('imei').value = '';
-    document.getElementById('cliente-nombre').value = '';
-    document.getElementById('cliente-cedula').value = '';
-    document.getElementById('cliente-telefono').value = '';
-    document.getElementById('modelo-select').value = '';
-    document.getElementById('marca-manual').value = '';
-    document.getElementById('modelo-manual').value = '';
-  } catch (err) {
-    document.getElementById('enrolamiento-msg').textContent = err.message;
+      const qrImg = document.createElement('img');
+      qrImg.src = qr.toDataURL();
+      msg.innerHTML = "Dispositivo enrolado exitosamente.<br/>";
+      msg.appendChild(qrImg);
+
+      // Registrar evento institucional
+      await supabase.from('eventos').insert({
+        tipo: 'venta',
+        vendedor_id,
+        comercio_id,
+        imei,
+        cliente: nombre,
+        modelo: modelo.modelo || modelo.modelo_id,
+        timestamp: new Date().toISOString()
+      });
+
+      // Limpiar campos
+      document.getElementById('imei').value = '';
+      document.getElementById('cliente-nombre').value = '';
+      document.getElementById('cliente-cedula').value = '';
+      document.getElementById('cliente-telefono').value = '';
+      document.getElementById('modelo-select').value = '';
+      document.getElementById('marca-manual').value = '';
+      document.getElementById('modelo-manual').value = '';
+
+      cargarHistorial();
+    } catch (err) {
+      msg.textContent = "Error inesperado: " + err.message;
+    }
   }
-}
 
-    async function cargarHistorial() {
-  const { data, error } = await supabase.rpc('historial_ventas', { vendedor_id });
+  async function cargarHistorial() {
+    const { data, error } = await supabase
+      .from('licencias')
+      .select('imei, nombre, modelo_manual, modelo_id, estado, fecha')
+      .eq('vendedor_id', vendedor_id);
 
-  if (error || !data) return;
+    const tbody = document.querySelector('#tabla-ventas tbody');
+    tbody.innerHTML = '';
 
-  const tbody = document.querySelector('#tabla-ventas tbody');
-  tbody.innerHTML = '';
-  data.forEach(v => {
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${v.imei}</td>
-      <td>${v.cliente_nombre}</td>
-      <td>${v.modelo_texto}</td>
-      <td>${v.estado}</td>
-      <td>${v.fecha}</td>
-    `;
-    tbody.appendChild(row);
-  });
-}
+    if (error || !data) return;
 
-function cerrarSesion() {
-  vendedor_id = null;
-  comercio_id = null;
-  document.getElementById('login-section').style.display = 'block';
-  document.getElementById('enrolamiento-section').style.display = 'none';
-  document.getElementById('historial-section').style.display = 'none';
-  document.getElementById('correo').value = '';
-  document.getElementById('clave').value = '';
-  document.getElementById('login-error').textContent = '';
-}
+    data.forEach(reg => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${reg.imei}</td>
+        <td>${reg.nombre}</td>
+        <td>${reg.modelo_manual || reg.modelo_id || '—'}</td>
+        <td>${reg.estado}</td>
+        <td>${new Date(reg.fecha).toLocaleString()}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
 
-function mostrarQR(link) {
-  // Elimina cualquier QR anterior
-  const anterior = document.getElementById('qrContainer');
-  if (anterior) anterior.remove();
+  function cerrarSesion() {
+    vendedor_id = null;
+    comercio_id = null;
+    document.getElementById('login-section').style.display = 'block';
+    document.getElementById('enrolamiento-section').style.display = 'none';
+    document.getElementById('historial-section').style.display = 'none';
+    document.getElementById('correo').value = '';
+    document.getElementById('clave').value = '';
+    document.getElementById('login-error').textContent = '';
+  }
 
-  // Crea el nuevo contenedor
-  const contenedor = document.createElement('div');
-  contenedor.id = 'qrContainer';
-  contenedor.innerHTML = `
-    <h3>Instalación en el dispositivo</h3>
-    <p>Escanea este código desde el teléfono vendido:</p>
-    <canvas id="qrCanvas"></canvas>
-    <p><a href="${link}" target="_blank">${link}</a></p>
-  `;
-  document.getElementById('enrolamiento-section').appendChild(contenedor);
-
-  // Genera el QR
-  new QRious({
-    element: document.getElementById('qrCanvas'),
-    value: link,
-    size: 200
-  });
-}
-window.loginVendedor = loginVendedor;
+  // Exponer login globalmente para el botón
+  window.loginVendedor = loginVendedor;
 });
 </script>
+
 </body>
 </html>
